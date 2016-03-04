@@ -1,9 +1,0 @@
-api = 2
-
-core = 7.x
-projects[] = "drupal"
-
-projects[civicrm][type] = "module"
-projects[civicrm][directory_name] = "civicrm"
-projects[civicrm][download][type] = "get"
-projects[civicrm][download][url] = "http://downloads.sourceforge.net/project/civicrm/civicrm-stable/4.3.11/civicrm-4.3.11-drupal.tar.gz"

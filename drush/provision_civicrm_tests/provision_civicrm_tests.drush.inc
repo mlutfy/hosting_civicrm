@@ -38,10 +38,8 @@ function drush_provision_civicrm_tests_run() {
     drush_log(dt('***** CiviCRM TEST: creating platforms.'), 'ok');
     drush_log(dt('*****'), 'ok');
 
-    provision_civicrm_tests_install_platform('civicrm43d7');
     provision_civicrm_tests_install_platform('civicrm44d7');
     provision_civicrm_tests_install_platform('civicrm46d7');
-    provision_civicrm_tests_install_platform('civicrm46d6');
     provision_civicrm_tests_install_platform('civicrm47d7');
 
     provision_civicrm_tests_001_install_and_delete();
@@ -62,10 +60,8 @@ function drush_provision_civicrm_tests_run() {
   drush_log(dt('***** CiviCRM TEST: Removing platforms.'), 'ok');
   drush_log(dt('*****'), 'ok');
 
-  provision_civicrm_tests_remove_platform('civicrm43d7');
   provision_civicrm_tests_remove_platform('civicrm44d7');
   provision_civicrm_tests_remove_platform('civicrm46d7');
-  provision_civicrm_tests_remove_platform('civicrm46d6');
   provision_civicrm_tests_remove_platform('civicrm47d7');
 
   // Restore the tasks queue status:
@@ -88,31 +84,17 @@ function provision_civicrm_tests_001_install_and_delete() {
   drush_log(dt('*****'), 'ok');
 
   // Install some sites.
-  provision_civicrm_tests_install_site('civicrm43d7', 'civicrm43d7-standard');
-  provision_civicrm_tests_remove_site('civicrm43d7-standard');
-
   provision_civicrm_tests_install_site('civicrm44d7', 'civicrm44d7-standard');
   provision_civicrm_tests_remove_site('civicrm44d7-standard');
 
   provision_civicrm_tests_install_site('civicrm46d7', 'civicrm46d7-standard');
   provision_civicrm_tests_remove_site('civicrm46d7-standard');
 
-  provision_civicrm_tests_install_site('civicrm46d6', 'civicrm46d6-standard');
-  provision_civicrm_tests_remove_site('civicrm46d6-standard');
+  provision_civicrm_tests_install_site('civicrm47d7', 'civicrm47d7-standard');
+  provision_civicrm_tests_remove_site('civicrm47d7-standard');
 }
 
 function provision_civicrm_tests_002_basic_migrations() {
-  // Test migrate from 4.3-D7 to 4.3-D7
-  drush_log(dt('*****'), 'ok');
-  drush_log(dt('***** CiviCRM TEST: migrate from 4.3-D7 to 4.3-D7.'), 'ok');
-  drush_log(dt('*****'), 'ok');
-
-  provision_civicrm_tests_install_platform('civicrm43d7', 'civicrm43d7_other');
-  provision_civicrm_tests_install_site('civicrm43d7', 'civicrm43d7-test-migrate');
-  provision_civicrm_tests_migrate_site('civicrm43d7-test-migrate', 'civicrm43d7_other');
-  provision_civicrm_tests_remove_site('civicrm43d7-test-migrate');
-  provision_civicrm_tests_remove_platform('civicrm43d7_other');
-
   // Test migrate from 4.4-D7 to 4.4-D7
   drush_log(dt('*****'), 'ok');
   drush_log(dt('***** CiviCRM TEST: migrate from 4.4-D7 to 4.4-D7.'), 'ok');

@@ -7,3 +7,10 @@ projects[civicrm][type] = "module"
 projects[civicrm][directory_name] = "civicrm"
 projects[civicrm][download][type] = "get"
 projects[civicrm][download][url] = "http://downloads.sourceforge.net/project/civicrm/civicrm-stable/4.4.21/civicrm-4.4.21-drupal.tar.gz"
+
+libraries[civicrmpatch][download][type] = "file"
+libraries[civicrmpatch][download][url] = "https://raw.githubusercontent.com/civicrm/civicrm-drupal/40a1820f73240b49ecf9e13c166af9df9287d52a/drush/civicrm.drush.inc"
+libraries[civicrmpatch][directory_name] = "drush"
+libraries[civicrmpatch][type] = "library"
+libraries[civicrmpatch][destination] = "modules/civicrm/drupal/"
+libraries[civicrmpatch][overwrite] = TRUE
