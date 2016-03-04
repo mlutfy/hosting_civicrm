@@ -9,6 +9,7 @@ CiviCRM API site key, and so on.
 [1] https://civicrm.org
 [2] http://www.aegirproject.org/
 
+TEST
 
 Installation
 ============
