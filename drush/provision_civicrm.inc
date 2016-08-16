@@ -611,22 +611,9 @@ function _provision_civicrm_upgradedb() {
     return;
   }
 
-  if (! defined('CIVICRM_UPGRADE_ACTIVE')) {
-    define('CIVICRM_UPGRADE_ACTIVE', 1);
-  }
-
   _civicrm_init();
 
   drush_log(dt("CiviCRM: in _provision_civicrm_upgradedb(), _civicrm_init() worked, comparing code and schema versions."));
-
-  // This was added around CiviCRM >= 4.2. Use it if possible.
-  // Does a few version checks before the upgrade.
-  // FIXME: should we use drush_invoke or equivalent?
-  if (function_exists('drush_civicrm_upgrade_db_validate')) {
-    if (! drush_civicrm_upgrade_db_validate()) {
-      return FALSE; // above already does a drush_set_error
-    }
-  }
 
   // Still need to check if the DB and code versions are the same
   // so that we can avoid calling the upgrade on 'verify'.
@@ -636,6 +623,21 @@ function _provision_civicrm_upgradedb() {
   if (version_compare($codeVer, $dbVer) == 0) {
     drush_log(dt("CiviCRM: no upgrade required (@codeVer = @dbVer)", array('@codeVer' => $codeVer, '@dbVer' => $dbVer)), 'ok');
     return;
+  }
+
+  if (! defined('CIVICRM_UPGRADE_ACTIVE')) {
+    drush_log(dt("CiviCRM: enabling CIVICRM_UPGRADE_ACTIVE, this will disable all extensions.", 'ok'));
+    define('CIVICRM_UPGRADE_ACTIVE', 1);
+  }
+
+  // This was added around CiviCRM >= 4.2. Use it if possible.
+  // Does a few version checks before the upgrade.
+  // NB: This function will define CIVICRM_UPGRADE_ACTIVE if not already set.
+  // FIXME: should we use drush_invoke or equivalent?
+  if (function_exists('drush_civicrm_upgrade_db_validate')) {
+    if (! drush_civicrm_upgrade_db_validate()) {
+      return FALSE; // above already does a drush_set_error
+    }
   }
 
   if (function_exists('drush_civicrm_upgrade_db')) {
@@ -666,7 +668,6 @@ function _provision_civicrm_upgradedb() {
  */
 function _provision_civicrm_check_upgrade_mode() {
   // Sets the civicrm upgrade mode of the code/db version do not match
-/*
   $codeVer = _provision_civicrm_codebase_version();
   $dbVer = _provision_civicrm_database_version();
 
@@ -676,13 +677,6 @@ function _provision_civicrm_check_upgrade_mode() {
       drush_log(dt('CiviCRM: upgrade mode enabled.'));
       return TRUE;
     }
-  }
-*/
-
-  if (! defined('CIVICRM_UPGRADE_ACTIVE')) {
-    define('CIVICRM_UPGRADE_ACTIVE', 1);
-    drush_log(dt('CiviCRM: upgrade mode enabled.'));
-    return TRUE;
   }
 
   return FALSE;
