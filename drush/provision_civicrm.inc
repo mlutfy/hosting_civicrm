@@ -494,6 +494,9 @@ function provision_civicrm_regenerate_settings_file($dbuser, $dbpass, $dbhost, $
     "$crmPath/templates/CRM/common/civicrm.settings.php.tpl"
   );
 
+  // Allow overriding the template file search paths.
+  drush_command_invoke_all_ref('civicrm_settings_template_files_alter', $files);
+
   $settingsTplFile = NULL;
   foreach ($files as $file) {
     if (file_exists($file)) {
@@ -539,6 +542,10 @@ function provision_civicrm_regenerate_settings_file($dbuser, $dbpass, $dbhost, $
     'siteKey' => $sitekey,
   );
   $str = file_get_contents($settingsTplFile);
+  // Allow changes to the settings file template.
+  drush_command_invoke_all_ref('civicrm_settings_template_alter', $str);
+  // Allow addition to and overrides of the settings file parameters.
+  drush_command_invoke_all_ref('civicrm_settings_parameters_alter', $params);
   foreach ($params as $key => $value) {
     $str = str_replace('%%' . $key . '%%', $value, $str);
   }
@@ -548,6 +555,46 @@ function provision_civicrm_regenerate_settings_file($dbuser, $dbpass, $dbhost, $
   civicrm_write_file($configFile, $str);
   @drush_op('chmod', "$configFile", 0644);
   drush_log(dt("Settings file generated: !file", array('!file' => $configFile)), 'ok');
+}
+
+/**
+ * Implements hook_civicrm_settings_template_alter().
+ *
+ * @see provision_civicrm_civicrm_settings_parameters_alter().
+ */
+function provision_civicrm_civicrm_settings_template_alter(&$template) {
+  $replacements = array();
+  $replacements['enable overrides to $civicrm_setting.'] = array(
+    'search_regex' => '/^.*?global.*civicrm_setting.*\n?/m',
+    'replace_line' => "global \$civicrm_setting;\n",
+  );
+  $replacements['allow uploadDir to be overridden.'] = array(
+    'search_regex' => '/^.*?civicrm_setting.*uploadDir.*\n?/m',
+    'replace_line' => "\$civicrm_setting['Directory Preferences']['uploadDir'] = '%%uploadDir%%';\n",
+  );
+
+  foreach ($replacements as $desc => $line) {
+    // Throw a warning if any of our replacements cannot be found.
+    if (!preg_match($line['search_regex'], $template)) {
+      drush_log(dt('CiviCRM: Failed to ' . $desc), 'warning');
+    }
+    else {
+      $count = 0;
+      $template = preg_replace($line['search_regex'], $line['replace_line'], $template, -1, $count);
+      if ($count > 0) {
+        drush_log(dt('CiviCRM: Succeeded to ' . $desc), 'success');
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_civicrm_settings_parameters_alter().
+ *
+ * @see provision_civicrm_civicrm_settings_template_alter().
+ */
+function provision_civicrm_civicrm_settings_parameters_alter(&$params) {
+  $params['uploadDir'] = d()->site_path . "/files/civicrm/upload";
 }
 
 function provision_civicrm_verify_common() {
@@ -640,25 +687,22 @@ function _provision_civicrm_upgradedb() {
     }
   }
 
+  drush_log(dt('CiviCRM: Beginning upgrade.'), 'info');
+  ob_start();
   if (function_exists('drush_civicrm_upgrade_db')) {
-    ob_start();
     drush_civicrm_upgrade_db();
-    $output = ob_get_contents();
-    drush_log(dt("CiviCRM: upgrade output: !output", array('!output' => $output)), 'warning');
-    ob_end_clean();
   }
   elseif (function_exists('civicrm_upgrade_db')) {
-    // CiviCRM < 4.2 ?
-    ob_start();
-    civicrm_upgrade_db();
-    $output = ob_get_contents();
-    drush_log(dt("CiviCRM: upgrade output: !output", array('!output' => $output)), 'warning');
-    ob_end_clean();
+    civicrm_upgrade_db(); // CiviCRM < 4.2 ?
   }
   else {
+    ob_end_clean();
     drush_log(dt("CiviCRM: Could not find a drush function to upgrade CiviCRM."), 'error');
     return;
   }
+  ob_end_clean();
+  $output = ob_get_contents();
+  drush_log(dt("CiviCRM: upgrade output: !output", array('!output' => $output)), 'info');
 
   drush_log(dt("CiviCRM: finished _provision_civicrm_upgradedb()"));
 }

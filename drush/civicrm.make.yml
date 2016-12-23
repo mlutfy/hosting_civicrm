@@ -1,0 +1,34 @@
+core: 7.x
+api: 2
+defaults:
+  projects:
+    subdir: contrib
+projects:
+  drupal:
+    type: core
+  webform_civicrm:
+    version: ~
+  views:
+    version: ~
+  ctools:
+    version: ~
+  civicrm:
+    download:
+      type: get
+      # N.B. The URL to the latest CiviCRM release must be updated manually,
+      # since it isn't published on drupal.org.
+      url: 'https://download.civicrm.org/civicrm-4.7.13-drupal.tar.gz'
+libraries:
+  civicrm_l10n_core:
+    destination: modules/contrib/civicrm
+    directory_name: l10n
+    download:
+      type: file
+      # N.B. Since translations are updated frequently, and deploying them is
+      # low-risk, we use the latest daily build. However, a more conservative
+      # option would be to use the release-specific translations instead:
+      #url: https://download.civicrm.org/civicrm-4.7.13-l10n.tar.gz
+      url: 'https://download.civicrm.org/civicrm-l10n-core/archives/civicrm-l10n-daily.tar.gz'
+    overwrite: true
+    type: library
+

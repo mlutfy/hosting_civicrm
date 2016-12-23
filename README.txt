@@ -32,7 +32,7 @@ to be enabled without the need to deploy any code.
 
 When new sites are created in the platform, provision_civicrm will detect that CiviCRM is available and will automatically install it.
 
-For convenience, a "drush make" makefile is available in drush/civicrm.make which can be used to generate a platform for you.
+For convenience, a "drush make" makefile is available in drush/civicrm.make.yml which can be used to generate a platform for you.
 
 Debugging
 =========

@@ -71,10 +71,15 @@ function hosting_civicrm_cron_queue($count) {
 }
 
 /**
- * Implements hook_perm().
+ * Implements hook_permission().
  */
-function hosting_civicrm_cron_perm() {
-  return array('configure site CiviCRM cron intervals');
+function hosting_civicrm_cron_permission() {
+  return array(
+    'configure site CiviCRM cron intervals' => array(
+      'title' => t('Configure site-specific CiviCRM cron intervals'),
+      'description' => t('Configure CiviCRM cron intervals on a site-by-site basis.'),
+    ),
+  );
 }
 
 /**
