@@ -24,7 +24,6 @@ function provision_civicrm_provision_services() {
  * Implements hook_civicrm_init()
  */
 function provision_civicrm_civicrm_init() {
-  // Log in a 'drush' subdirectory
   return provision_civicrm_setup_temp_directories();
 }
 
