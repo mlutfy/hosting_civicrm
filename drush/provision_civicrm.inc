@@ -735,11 +735,11 @@ function _provision_civicrm_codebase_version() {
     return $civicrm_version;
   }
 
-  _civicrm_init();
-  require_once 'CRM/Utils/System.php';
-
-  if (method_exists('CRM_Utils_System', 'version')) {
-    $civicrm_version = CRM_Utils_System::version();
+  $packages = drush_get_option('packages');
+  if (array_key_exists('civicrm', $packages['modules'])) {
+    $full_version = $packages['modules']['civicrm']['info']['version'];
+    $parsed_version = pm_parse_version($full_version);
+    $civicrm_version = $parsed_version['project_version'];
   }
 
   return $civicrm_version;
