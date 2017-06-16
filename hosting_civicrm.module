@@ -100,12 +100,13 @@ function hosting_civicrm_node_insert($node) {
 
 function hosting_civicrm_node_update_or_insert($node) {
   // Avoid creating a site key for Drupal-only site.
-  if (isset($node->civicrm_sitekey)) {
+  if (isset($node->civicrm_version)) {
     $sitekey = $node->civicrm_sitekey;
 
     if (empty($sitekey)) {
+      global $base_url;
       // Adapted from civicrm/install/civicrm.php
-      $sitekey = md5(rand() . mt_rand() . rand() . uniqid('', TRUE) . $params['baseURL']);
+      $sitekey = md5(rand() . mt_rand() . rand() . uniqid('', TRUE) . $base_url);
     }
 
     db_query('UPDATE {hosting_site} SET civicrm_sitekey = :sitekey WHERE nid = :nid', array(':sitekey' => $sitekey, ':nid' => $node->nid));
