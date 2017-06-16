@@ -92,6 +92,15 @@ function _provision_civicrm_install_civicrm($dbuser, $dbpass, $dbhost, $dbname, 
   drush_log(dt("CiviCRM: Generating the CiviCRM settings file."));
   _civicrm_generate_settings_file($dbuser, $dbpass, $dbhost, $dbname, $modPath);
 
+  // SystemInstallEvent will be called from here with the first call of CRM_Core_Config,
+  // which calls Core_BAO_ConfigSetting::applyLocale(), who will default to calling
+  // Civi::settings()->get('lcMessages');
+  // Therefore, we need to pass the seedLanguage before that.
+  if ($lang) {
+    global $civicrm_setting;
+    $civicrm_setting['domain']['lcMessages'] = $lang;
+  }
+
   drush_log(dt("CiviCRM: Enabling the CiviCRM module."));
 
   if (drush_drupal_major_version() == 8) {
