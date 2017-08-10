@@ -152,6 +152,7 @@ function _provision_civicrm_language_uf_to_civicrm($uf_language) {
     'sv' => 'sv_SE', // Swedish
     'sl' => 'sl_SI', // Slovenian
     'sq' => 'sq_AL', // Albenian
+    'sr' => 'sr_RS', // Serbian
     'vi' => 'vi_VN', // Vietnam
     'zh' => 'zh_CN', // Mandarin/China
   );
