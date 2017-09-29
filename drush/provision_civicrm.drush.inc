@@ -53,3 +53,15 @@ function provision_civicrm_provision_register_autoload() {
   }
 }
 
+/**
+ * Implementation of hook_drush_command().
+ */
+function provision_civicrm_drush_command() {
+  $items['provision-civicrm-cli'] = array(
+    'description' => 'Run a civicrm cv command.',
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
+    'aliases' => array('cv'),
+  );
+
+  return $items;
+}
