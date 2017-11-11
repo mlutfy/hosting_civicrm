@@ -1,5 +1,6 @@
-hosting_civicrm:
-  script: ./tests/start.sh
+test:
+  script:
+  - ./tests/start.sh
   artifacts:
     untracked: true
   tags:
