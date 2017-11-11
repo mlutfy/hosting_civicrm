@@ -9,6 +9,9 @@ CiviCRM API site key, and so on.
 [1] https://civicrm.org
 [2] http://www.aegirproject.org/
 
+To get the latest version of `hosting_civicrm` or to submit a patch (merge
+request), please see the project on Gitlab:  
+https://gitlab.com/aegir/hosting_civicrm
 
 Requirements
 ============
