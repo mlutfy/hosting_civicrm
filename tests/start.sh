@@ -1,5 +1,8 @@
 #!/bin/sh
 
+set -e
+set -x
+
 HOSTMASTER_ROOT=`sudo -u aegir grep root /var/aegir/config/server_master/nginx/vhost.d/${HOSTMASTER_SITE} | awk '{print $2}' | grep hostmaster | sed "s/;//"`
 
 sudo -u aegir rm -fr ${HOSTMASTER_ROOT}/profiles/hostmaster/modules/aegir/hosting_civicrm/
