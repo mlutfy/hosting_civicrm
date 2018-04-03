@@ -61,6 +61,23 @@ function drush_provision_civicrm_post_provision_install($url = null) {
  * the platform is already created with drush make.
  */
 function _provision_civicrm_install_civicrm($dbuser, $dbpass, $dbhost, $dbname, $lang) {
+  // As of D8, the database schema and civicrm.settings.php
+  // are generated when the module is first installed.
+  if (drush_drupal_major_version() == 8) {
+    // SystemInstallEvent will be called from here with the first call of CRM_Core_Config,
+    // which calls Core_BAO_ConfigSetting::applyLocale(), who will default to calling
+    // Civi::settings()->get('lcMessages');
+    // Therefore, we need to pass the seedLanguage before that.
+    if ($lang) {
+      global $civicrm_setting;
+      $civicrm_setting['domain']['lcMessages'] = $lang;
+    }
+
+    drush_log(dt("CiviCRM: Enabling the CiviCRM module."), 'ok');
+    \Drupal::service('module_installer')->install(['civicrm']);
+    return;
+  }
+
   // Various civicrm.drush.inc functions expect the $crmPath to be set.
   global $crmPath;
   $crmPath = _provision_civicrm_get_package_path();
@@ -101,14 +118,8 @@ function _provision_civicrm_install_civicrm($dbuser, $dbpass, $dbhost, $dbname, 
     $civicrm_setting['domain']['lcMessages'] = $lang;
   }
 
-  drush_log(dt("CiviCRM: Enabling the CiviCRM module."));
-
-  if (drush_drupal_major_version() == 8) {
-    \Drupal::service('module_installer')->install(['civicrm']);
-  }
-  else {
-    module_enable(array('civicrm'));
-  }
+  drush_log(dt("CiviCRM: Enabling the CiviCRM module."), 'ok');
+  module_enable(array('civicrm'));
 
   // Save the site key, in case we verify later on, it will regenerate
   // the civicrm.settings.php
