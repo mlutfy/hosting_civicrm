@@ -25,8 +25,6 @@ class migrateTest extends HostingCiviTestCase {
   public static function setUpBeforeClass() {
     parent::setUpBeforeClass();
 
-    Command\PlatformInstall::run('civicrm43d7');
-    Command\PlatformInstall::run('civicrm44d7');
     Command\PlatformInstall::run('civicrm46d7');
     Command\PlatformInstall::run('civicrm46d7', 'civicrm46d7_other');
     Command\PlatformInstall::run('civicrm47d7');
@@ -41,8 +39,6 @@ class migrateTest extends HostingCiviTestCase {
   public static function tearDownAfterClass() {
     // While in theory we should do this, it makes tests
     // take a really long time, and does have many benefits.
-    # Command\PlatformDelete::run('civicrm43d7');
-    # Command\PlatformDelete::run('civicrm44d7');
     # Command\PlatformDelete::run('civicrm46d7');
     # Command\PlatformDelete::run('civicrm46d7_other');
     # Command\PlatformDelete::run('civicrm47d7');
@@ -100,21 +96,6 @@ class migrateTest extends HostingCiviTestCase {
     $this->assertEquals($version, '4.7');
 
     Command\SiteDelete::run('civicrm46d7-mig');
-  }
-
-  /**
-   * Test the migration of a 4.4 D7 site to 4.7 D7.
-   */
-  public function testMigrate44d7to47d7() {
-    Command\SiteInstall::run('civicrm44d7', 'civicrm44d7-mig');
-    Command\SiteMigrate::run('civicrm44d7-mig', 'civicrm47d7');
-
-    // Confirm that we are on CiviCRM 4.7
-    $version = Command\SiteUtils::getCiviVersion('civicrm44d7-mig');
-    $version = substr($version, 0, 3);
-    $this->assertEquals($version, '4.7');
-
-    Command\SiteDelete::run('civicrm44d7-mig');
   }
 
 }

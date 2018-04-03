@@ -23,8 +23,6 @@ class installTest extends HostingCiviTestCase {
   public static function setUpBeforeClass() {
     parent::setUpBeforeClass();
 
-    Command\PlatformInstall::run('civicrm43d7');
-    Command\PlatformInstall::run('civicrm44d7');
     Command\PlatformInstall::run('civicrm46d7');
     Command\PlatformInstall::run('civicrm46d6');
     Command\PlatformInstall::run('civicrm47d7');
@@ -38,8 +36,6 @@ class installTest extends HostingCiviTestCase {
   public static function tearDownAfterClass() {
     // While in theory we should do this, it makes tests
     // take a really long time, and does have many benefits.
-    # Command\PlatformDelete::run('civicrm43d7');
-    # Command\PlatformDelete::run('civicrm44d7');
     # Command\PlatformDelete::run('civicrm46d7');
     # Command\PlatformDelete::run('civicrm46d6');
     # Command\PlatformDelete::run('civicrm47d7');
@@ -54,22 +50,6 @@ class installTest extends HostingCiviTestCase {
     $result = 'hello';
     $expected = 'hello';
     $this->assertEquals($result, $expected);
-  }
-
-  /**
-   * Test the installation and deletion of sites with CiviCRM 4.3 D7.
-   */
-  public function testInstallAndDelete43d7() {
-    Command\SiteInstall::run('civicrm43d7', 'civicrm43d7-standard');
-    Command\SiteDelete::run('civicrm43d7-standard');
-  }
-
-  /**
-   * Test the installation and deletion of sites with CiviCRM 4.4 D7.
-   */
-  public function testInstallAndDelete44d7() {
-    Command\SiteInstall::run('civicrm44d7', 'civicrm44d7-standard');
-    Command\SiteDelete::run('civicrm44d7-standard');
   }
 
   /**
