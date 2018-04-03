@@ -3,6 +3,11 @@
 set -e
 set -x
 
+# This is to allow phpunit to write the results.xml file as the aegir user,
+# so that it gets collected as an artifact.
+# Assumes that the 'aegir' user is a member of the 'gitlab-runner' unix group.
+chmod g+w "${CI_PROJECT_DIR}/tests/"
+
 # If https is enabled, the vhost might have multiple 'root' entries
 # hence piping in uniq and head, as a precaution.
 HOSTMASTER_ROOT=`sudo -u aegir grep root /var/aegir/config/server_master/nginx/vhost.d/${HOSTMASTER_SITE} | awk '{print $2}' | grep hostmaster | sed "s/;//" | uniq | head -1`
