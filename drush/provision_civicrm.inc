@@ -764,6 +764,7 @@ function _provision_civicrm_database_version() {
       break;
 
     case 7:
+    case 8:
       $dbVer = db_query('select version from {civicrm_domain} where id = :id', array(':id' => CIVICRM_DOMAIN_ID))->fetchField();
       break;
   }
