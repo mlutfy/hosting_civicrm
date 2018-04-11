@@ -41,8 +41,8 @@ function drush_provision_civicrm_post_provision_install($url = null) {
   // Fix some paths (not really necessary since 4.x, works fine after install).
   // _provision_civicrm_fixresourceurls();
 
-  // Make sure the template_c and uploads have the correct permissions
-  _provision_civicrm_fixpermissions();
+  // Clear Config.IDS.ini
+  _provision_civicrm_clear_config_cache();
 
   drush_log(dt("CiviCRM: Installation complete!"), 'ok');
 }

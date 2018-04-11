@@ -40,7 +40,7 @@ function drush_provision_civicrm_provision_verify($url = NULL) {
   _provision_civicrm_regenerate_settings();
 
   // Most importantly, get rid of the Config.IDS.ini
-  _provision_civicrm_fixpermissions();
+  _provision_civicrm_clear_config_cache();
 
   // Enabling the upgrade mode (if necessary) will avoid pesky issues
   // during the Drupal upgrade.

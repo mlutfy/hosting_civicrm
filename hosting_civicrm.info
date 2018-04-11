@@ -2,4 +2,6 @@ name = Hosting CiviCRM
 description = Enables installation and maintenance of CiviCRM on sites.
 package = Aegir CiviCRM
 dependencies[] = hosting
+dependencies[] = fix_permissions
+dependencies[] = fix_ownership
 core = 7.x
