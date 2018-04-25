@@ -61,6 +61,11 @@ function drush_provision_civicrm_post_provision_deploy() {
   }
 
   drush_log(dt("CiviCRM: Running drush_civicrm_post_provision_deploy"));
-  drush_variable_delete('civicrm_class_loader');
+
+  // Drupal8 has "cdel", but seems like civicrm on d8 doesn't use this?
+  if (drush_drupal_major_version() <= 7) {
+    drush_variable_delete('civicrm_class_loader');
+  }
+
   drush_log(dt("CiviCRM: Finished drush_civicrm_post_provision_deploy"));
 }
