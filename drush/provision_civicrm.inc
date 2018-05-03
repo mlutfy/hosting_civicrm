@@ -295,7 +295,9 @@ function _provision_civicrm_get_package_path($load_if_missing = FALSE) {
   if ($module) {
     // Issue#2942572 For D8, for now, we only support having CiviCRM in /vendor
     if (substr($module['version'], 0, 2) == '8.') {
-      return 'vendor/civicrm/civicrm-core/';
+      $crmpath = d()->root . '/vendor/civicrm/civicrm-core/';
+      drush_log(dt('CiviCRM: civicrm is in @path', array('@path' => $crmpath)));
+      return $crmpath;
     }
 
     // Get the parent directory of the module, which is in civicrm/drupal/civicrm.module
