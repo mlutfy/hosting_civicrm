@@ -684,6 +684,12 @@ function _provision_civicrm_check_upgrade_mode() {
 
 /**
  * Helper function to get the CiviCRM version of the code base
+ *
+ * A few notes:
+ * - Not using pm_parse_version() to parse the version, because it does not
+ *   like versions such as '8.x-5.0.beta1'.
+ * - Drupal7 has $packages['modules']['civicrm']['info']['version'],
+ *   but Drupal8 only has $packages['modules']['civicrm']['version'] (which D7 also has).
  */
 function _provision_civicrm_codebase_version() {
   static $civicrm_version = 0;
@@ -693,10 +699,11 @@ function _provision_civicrm_codebase_version() {
   }
 
   $packages = drush_get_option('packages');
+
   if (array_key_exists('civicrm', $packages['modules'])) {
-    $full_version = $packages['modules']['civicrm']['info']['version'];
-    $parsed_version = pm_parse_version($full_version);
-    $civicrm_version = $parsed_version['project_version'];
+    $full_version = $packages['modules']['civicrm']['version'];
+    $parts = explode('-', $full_version);
+    $civicrm_version = $parts[1];
   }
 
   return $civicrm_version;
@@ -724,4 +731,3 @@ function _provision_civicrm_database_version() {
   drush_log(dt('CiviCRM: db version is !ver', array('!ver' => $dbVer)));
   return $dbVer;
 }
-
