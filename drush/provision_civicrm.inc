@@ -645,7 +645,8 @@ function _provision_civicrm_upgradedb() {
     }
   }
 
-  drush_log(dt('CiviCRM: Beginning upgrade.'), 'info');
+  drush_log(dt('CiviCRM: Beginning upgrade from @dbVer to @codeVer', array('@codeVer' => $codeVer, '@dbVer' => $dbVer)), 'info');
+
   ob_start();
   if (function_exists('drush_civicrm_upgrade_db')) {
     drush_civicrm_upgrade_db();
@@ -659,9 +660,10 @@ function _provision_civicrm_upgradedb() {
     return;
   }
   ob_end_clean();
-  $output = ob_get_contents();
-  drush_log(dt("CiviCRM: upgrade output: !output", array('!output' => $output)), 'info');
 
+  $output = ob_get_contents();
+
+  drush_log(dt("CiviCRM: upgrade output: !output", array('!output' => $output)), 'info');
   drush_log(dt("CiviCRM: finished _provision_civicrm_upgradedb()"));
 }
 
