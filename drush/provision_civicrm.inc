@@ -423,7 +423,7 @@ function _provision_civicrm_regenerate_settings() {
   $civicrmInstallerHelper = $crmPath . "/install/civicrm.php";
 
   if (! file_exists($civicrmInstallerHelper) ) {
-    drush_log(dt("CiviCRM installer helper file is missing. Not running provision_civicrm_regenerate_settings()."));
+    drush_log(dt("CiviCRM installer helper file is missing. Not running provision_civicrm_regenerate_settings()."), 'error');
     return;
   }
 
