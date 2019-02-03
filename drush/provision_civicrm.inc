@@ -468,7 +468,7 @@ function provision_civicrm_regenerate_settings_file($dbuser, $dbpass, $dbhost, $
 
   drush_log(dt("CiviCRM: Generating the settings file .."), 'ok');
 
-  $protocol = (d()->ssl_enabled > 0 ? 'https' : 'http');
+  $protocol = (d()->ssl_enabled || d()->https_enabled) ? 'https' : 'http';
   $baseUrl = $protocol . '://' . d()->uri;
   $db_spec = drush_civicrm_get_db_spec();
 
