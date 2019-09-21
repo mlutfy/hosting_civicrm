@@ -159,6 +159,7 @@ function _provision_civicrm_language_uf_to_civicrm($uf_language) {
     'et' => 'et_EE', // Estonian
     'he' => 'he_IL', // Hebrew/Israel
     'hi' => 'hi_IN', // Hindi
+    'hy' => 'hy_AM', // Armenian
     'ja' => 'ja_JP', // Japanese/Japan
     'sv' => 'sv_SE', // Swedish
     'sl' => 'sl_SI', // Slovenian
