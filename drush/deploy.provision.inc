@@ -55,14 +55,43 @@ function drush_provision_civicrm_post_provision_deploy() {
   global $conf;
   $conf['blocked_ips'] = array();
 
-  if (! drush_bootstrap(DRUSH_BOOTSTRAP_DRUPAL_DATABASE)) {
-    drush_log(dt("CiviCRM: failed to bootstrap Drupal for deploy."));
+  // Full bootstrap is required so that we can use CiviCRM functions
+  if (!drush_bootstrap(DRUSH_BOOTSTRAP_DRUPAL_FULL)) {
+    drush_log(dt("CiviCRM: failed to bootstrap Drupal for deploy."), 'warning');
     return;
   }
 
   drush_log(dt("CiviCRM: Running drush_civicrm_post_provision_deploy"));
 
-  // Drupal8 has "cdel", but seems like civicrm on d8 doesn't use this?
+  // Check if Mosaico exists, rename paths in the database.
+  $mosaico_exists = FALSE;
+
+  if (!provision_civicrm_initialize()) {
+    drush_log(dt("CiviCRM: drush_civicrm_post_provision_deploy failed to initialize CiviCRM"));
+    return;
+  }
+
+  $mosaico_exists = CRM_Core_DAO::checkTableExists('civicrm_mosaico_template');
+
+  if ($mosaico_exists) {
+    $new_url = drush_get_option('uri');
+    $old_url = drush_get_option('old_uri');
+
+    CRM_Core_DAO::executeQuery('UPDATE civicrm_mosaico_template SET metadata = REPLACE(metadata, %1, %2)', [
+      1 => [$old_url, 'String'],
+      2 => [$new_url, 'String'],
+    ]);
+
+    // Required so that re-using old mailings still works
+    CRM_Core_DAO::executeQuery('UPDATE civicrm_mailing SET template_options = REPLACE(template_options, %1, %2)', [
+      1 => [$old_url, 'String'],
+      2 => [$new_url, 'String'],
+    ]);
+  }
+
+  // This variable has long been deprecated from CiviCRM, but we are keeping
+  // this just in case we are handling an upgrade/import from a very old version.
+  // Not checking for Drupal8 because it is a very unlikely use-case.
   if (drush_drupal_major_version() <= 7) {
     drush_variable_delete('civicrm_class_loader');
   }

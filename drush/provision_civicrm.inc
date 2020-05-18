@@ -28,6 +28,24 @@ function provision_civicrm_civicrm_init() {
 }
 
 /**
+ * Wrapper to initialize CiviCRM, depending on the CMS.
+ *
+ * Returns FALSE if this is not a CiviCRM site (ex: hostmaster).
+ */
+function provision_civicrm_initialize() {
+  if (drush_drupal_major_version() >= 8 && \Drupal::hasService('civicrm')) {
+    \Drupal::service('civicrm')->initialize();
+    return TRUE;
+  }
+  elseif (function_exists('civicrm_initialize')) {
+    civicrm_initialize();
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
  * Setup logs and template_c in a sub-directory to avoid permission
  * conflicts between the www-user and the aegir user.
  */
