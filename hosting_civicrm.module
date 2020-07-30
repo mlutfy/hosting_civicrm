@@ -161,18 +161,18 @@ function hosting_civicrm_get_sites($order_by = null) {
   $platforms = hosting_civicrm_get_platforms();
   $sites = array();
 
+  if (!$order_by) {
+    $order_by = 'nid';
+  }
+
   foreach ($platforms as $platform) {
     //get all the enabled sites on the platform
-    if (isset($order_by)) {
-      $result = db_query('SELECT n.nid FROM {node} n LEFT JOIN {hosting_site} s ON n.nid=s.nid WHERE n.type="site" and s.status = :status and s.platform = :platform ORDER BY :orderby ASC', array(
-        ':platform' => $platform,
-        ':status' => HOSTING_SITE_ENABLED,
-        ':orderby' => $order_by
-      ));
-    }
-    else {
-      $result = db_query('SELECT n.nid FROM {node} n LEFT JOIN {hosting_site} s ON n.nid=s.nid WHERE n.type="site" and s.status = %d and s.platform=%d', array(':platform' => $platform, ':status' => HOSTING_SITE_ENABLED));
-    }
+    $result = db_query('SELECT n.nid FROM {node} n LEFT JOIN {hosting_site} s ON n.nid=s.nid WHERE n.type = :type and s.status = :status and s.platform = :platform ORDER BY :orderby ASC', [
+      ':type' => 'site',
+      ':platform' => $platform,
+      ':status' => HOSTING_SITE_ENABLED,
+      ':orderby' => $order_by
+    ]);
 
     foreach ($result as $record) {
       $sites[] = $record->nid;
