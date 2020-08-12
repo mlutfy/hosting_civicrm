@@ -311,9 +311,14 @@ function _provision_civicrm_get_package_path($load_if_missing = FALSE) {
   $module = _provision_civicrm_get_package_info();
 
   if ($module) {
-    // Issue#2942572 For D8, for now, we only support having CiviCRM in /vendor
-    if (substr($module['version'], 0, 2) == '8.') {
-      $crmpath = d()->root . '/vendor/civicrm/civicrm-core/';
+    // Issue#2942572 For D8 and D9, for now, we only support having CiviCRM in /vendor
+    $module_major_ver = substr($module['version'], 0, 2);
+    if ($module_major_ver == '8.' || $module_major_ver == '9.') {
+      $root = d()->root;
+      // If Drupal lives under a 'web' subdirectory (which is usually the case with composer),
+      // we remove the prefix, since the vendor directory is outside 'web'.
+      $root = preg_replace('#web/?$#', '', $root);
+      $crmpath = $root . '/vendor/civicrm/civicrm-core/';
       drush_log(dt('CiviCRM: civicrm is in @path', array('@path' => $crmpath)));
       return $crmpath;
     }
