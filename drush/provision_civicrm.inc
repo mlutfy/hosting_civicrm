@@ -728,10 +728,13 @@ function _provision_civicrm_codebase_version() {
   $packages = drush_get_option('packages');
 
   if (array_key_exists('civicrm', $packages['modules'])) {
-    $full_version = $packages['modules']['civicrm']['version'];
-    $parts = explode('-', $full_version);
-    $civicrm_version = $parts[1];
+    $path = _provision_civicrm_get_package_path();
+    require_once $path . '/CRM/Utils/System.php';
+    require_once $path . '/CRM/Core/Exception.php';
+    // Use the CiviCRM function to determine the code version rather than module information as it may not be as reliable on d8/9
+    $civicrm_version = CRM_Utils_System::version();
   }
+  drush_log(dt('CiviCRM: code version is !ver', array('!ver' => $civicrm_version)));
 
   return $civicrm_version;
 }
