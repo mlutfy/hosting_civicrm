@@ -312,8 +312,8 @@ function _provision_civicrm_get_package_path($load_if_missing = FALSE) {
 
   if ($module) {
     // Issue#2942572 For D8 and D9, for now, we only support having CiviCRM in /vendor
-    $module_major_ver = substr($module['version'], 0, 2);
-    if ($module_major_ver == '8.' || $module_major_ver == '9.') {
+    // In Drupal 8 / 9 the version key has been dropped from the info.yml file so rely on core version check
+    if (drush_drupal_major_version() >= 8) {
       $root = d()->root;
       // If Drupal lives under a 'web' subdirectory (which is usually the case with composer),
       // we remove the prefix, since the vendor directory is outside 'web'.
@@ -728,10 +728,13 @@ function _provision_civicrm_codebase_version() {
   $packages = drush_get_option('packages');
 
   if (array_key_exists('civicrm', $packages['modules'])) {
-    $full_version = $packages['modules']['civicrm']['version'];
-    $parts = explode('-', $full_version);
-    $civicrm_version = $parts[1];
+    $path = _provision_civicrm_get_package_path();
+    require_once $path . '/CRM/Utils/System.php';
+    require_once $path . '/CRM/Core/Exception.php';
+    // Use the CiviCRM function to determine the code version rather than module information as it may not be as reliable on d8/9
+    $civicrm_version = CRM_Utils_System::version();
   }
+  drush_log(dt('CiviCRM: code version is !ver', array('!ver' => $civicrm_version)));
 
   return $civicrm_version;
 }
