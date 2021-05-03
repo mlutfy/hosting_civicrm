@@ -35,9 +35,6 @@ function drush_provision_civicrm_post_provision_install($url = null) {
 
   _provision_civicrm_install_civicrm($db_user, $db_passwd, $db_host, $db_name, $lang);
 
-  // Deprecated by hosting_civicrm_cron
-  // _provision_civicrm_create_civicron_user();
-
   // Fix some paths (not really necessary since 4.x, works fine after install).
   // _provision_civicrm_fixresourceurls();
 
