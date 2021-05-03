@@ -676,13 +676,15 @@ function _provision_civicrm_check_upgrade_mode() {
 }
 
 /**
- * Helper function to get the CiviCRM version of the code base
+ * Helper function to get the CiviCRM version of the code base.
  *
- * A few notes:
- * - Not using pm_parse_version() to parse the version, because it does not
+ * Avoiding any CMS or Aegir methods, because:
+ * - using pm_parse_version() to parse the version, because it does not
  *   like versions such as '8.x-5.0.beta1'.
  * - Drupal7 has $packages['modules']['civicrm']['info']['version'],
  *   but Drupal8 only has $packages['modules']['civicrm']['version'] (which D7 also has).
+ * - Sometimes the platform info is outdated unless we remember to run verify.
+ * - CiviCRM has a somewhat stable interface to fetch this info.
  */
 function _provision_civicrm_codebase_version() {
   static $civicrm_version = 0;
@@ -691,12 +693,22 @@ function _provision_civicrm_codebase_version() {
     return $civicrm_version;
   }
 
-  $packages = drush_get_option('packages');
+  $crmPath = _provision_civicrm_get_package_path();
+  require_once "$crmPath/civicrm-version.php";
 
-  if (array_key_exists('civicrm', $packages['modules'])) {
-    $full_version = $packages['modules']['civicrm']['version'];
-    $parts = explode('-', $full_version);
-    $civicrm_version = $parts[1];
+  if (is_callable(['\_CiviVersion_\Util', 'findVersion'])) {
+    // This works with CiviCRM on Drupal8
+    $civicrm_version = \_CiviVersion_\Util::findVersion();
+  }
+  elseif (function_exists('civicrmVersion')) {
+    // This will one day be deprecated, but not as of CiviCRM 5.36
+    $info = civicrmVersion();
+    $civicrm_version = $info['version'];
+  }
+  else {
+    // This should never happen
+    drush_log(dt("CiviCRM: could not determine the code version with findVersion"), 'warning');
+    return 0;
   }
 
   return $civicrm_version;
