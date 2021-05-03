@@ -378,40 +378,6 @@ function _provision_civicrm_get_package_info() {
 }
 
 /**
- * Wrapper function for getConfigSettings (class location changed in 4.1)
- */
-function provision_civicrm_get_config_settings() {
-  require_once 'CRM/Utils/System.php';
-  $codeVer = CRM_Utils_System::version();
-
-  if (substr($codeVer, 0, 3) >= '4.1') {
-    require_once 'CRM/Core/BAO/ConfigSetting.php';
-    return CRM_Core_BAO_ConfigSetting::getConfigSettings();
-  }
-
-  // else
-  require_once 'CRM/Core/BAO/Setting.php';
-  return CRM_Core_BAO_Setting::getConfigSettings();
-}
-
-/**
- * Wrapper function for getBestGuessSettings (class location changed in 4.1)
- */
-function provision_civicrm_get_best_guess_settings() {
-  require_once 'CRM/Utils/System.php';
-  $codeVer = CRM_Utils_System::version();
-
-  if (substr($codeVer, 0, 3) >= '4.1') {
-    require_once 'CRM/Core/BAO/ConfigSetting.php';
-    return CRM_Core_BAO_ConfigSetting::getBestGuessSettings();
-  }
-
-  // else
-  require_once 'CRM/Core/BAO/Setting.php';
-  return CRM_Core_BAO_Setting::getBestGuessSettings();
-}
-
-/**
  * CiviCRM verify operations (used by both verify and deploy)
  */
 function _provision_civicrm_regenerate_settings() {
