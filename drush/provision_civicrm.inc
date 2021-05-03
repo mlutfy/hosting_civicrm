@@ -250,8 +250,8 @@ function _provision_civicrm_get_package_path($load_if_missing = FALSE) {
 
   if ($module) {
     // Issue#2942572 For D8 and D9, for now, we only support having CiviCRM in /vendor
-    $module_major_ver = substr($module['version'], 0, 2);
-    if ($module_major_ver == '8.' || $module_major_ver == '9.') {
+    // In Drupal 8 / 9 the version key has been dropped from the info.yml file so rely on core version check
+    if (drush_drupal_major_version() >= 8) {
       $root = d()->root;
       // If Drupal lives under a 'web' subdirectory (which is usually the case with composer),
       // we remove the prefix, since the vendor directory is outside 'web'.
@@ -632,21 +632,11 @@ function _provision_civicrm_codebase_version() {
   }
 
   $crmPath = _provision_civicrm_get_package_path();
-  require_once "$crmPath/civicrm-version.php";
 
-  if (is_callable(['\_CiviVersion_\Util', 'findVersion'])) {
-    // This works with CiviCRM on Drupal8
-    $codeVer = \_CiviVersion_\Util::findVersion();
-  }
-  elseif (function_exists('civicrmVersion')) {
-    // This will one day be deprecated, but not as of CiviCRM 5.36
-    $info = civicrmVersion();
-    $codeVer = $info['version'];
-  }
-  else {
-    // This should never happen
-    drush_log(dt("CiviCRM: could not determine the code version with findVersion"), 'warning');
-    return 0;
+  if ($crmPath) {
+    require_once $crmPath . '/CRM/Utils/System.php';
+    require_once $crmPath . '/CRM/Core/Exception.php';
+    $codeVer = CRM_Utils_System::version();
   }
 
   drush_log(dt('CiviCRM: code version is !ver', array('!ver' => $dbVer)));
