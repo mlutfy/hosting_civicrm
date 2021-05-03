@@ -625,10 +625,10 @@ function _provision_civicrm_check_upgrade_mode() {
  * - CiviCRM has a somewhat stable interface to fetch this info.
  */
 function _provision_civicrm_codebase_version() {
-  static $civicrm_version = 0;
+  static $codeVer = 0;
 
-  if ($civicrm_version) {
-    return $civicrm_version;
+  if ($codeVer) {
+    return $codeVer;
   }
 
   $crmPath = _provision_civicrm_get_package_path();
@@ -636,12 +636,12 @@ function _provision_civicrm_codebase_version() {
 
   if (is_callable(['\_CiviVersion_\Util', 'findVersion'])) {
     // This works with CiviCRM on Drupal8
-    $civicrm_version = \_CiviVersion_\Util::findVersion();
+    $codeVer = \_CiviVersion_\Util::findVersion();
   }
   elseif (function_exists('civicrmVersion')) {
     // This will one day be deprecated, but not as of CiviCRM 5.36
     $info = civicrmVersion();
-    $civicrm_version = $info['version'];
+    $codeVer = $info['version'];
   }
   else {
     // This should never happen
@@ -649,14 +649,20 @@ function _provision_civicrm_codebase_version() {
     return 0;
   }
 
-  return $civicrm_version;
+  drush_log(dt('CiviCRM: code version is !ver', array('!ver' => $dbVer)));
+  return $codeVer;
 }
 
 /**
  * Helper function to get the CiviCRM version of the DB
  */
 function _provision_civicrm_database_version() {
-  $dbVer = 0;
+  static $dbVer = 0;
+
+  if ($dbVer) {
+    return $dbVer;
+  }
+
   $civicrmSettingsFile = d()->site_path . "/civicrm.settings.php";
   include_once($civicrmSettingsFile);
 
