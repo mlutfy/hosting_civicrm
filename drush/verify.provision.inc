@@ -91,21 +91,21 @@ function drush_provision_civicrm_post_provision_verify($url = NULL) {
     // Run the CiviCRM upgrade procedure
     _provision_civicrm_upgradedb();
 
-    drush_log(dt("CiviCRM: calling cache clear"));
+    // Only flush the cache if we are not upgrading. The upgrader already does a flush, and could
+    // lead to odd errors such as: 'The dispatch policy prohibits event "hook_civicrm_permission"'
+    if (!_provision_civicrm_check_upgrade_mode()) {
+      drush_log(dt("CiviCRM: calling cache clear"));
 
-    if (function_exists('drush_civicrm_cacheclear')) {
-      // CiviCRM >= 4.2
-      drush_civicrm_cacheclear();
-    }
-    elseif (function_exists('civicrm_cache_clear')) {
-      // CiviCRM < 4.2
-      civicrm_cache_clear();
-    }
-    else {
-      drush_log(dt("CiviCRM: Could not find the function to flush the cache. What version of CiviCRM are you using?"), 'warning');
-    }
+      if (function_exists('civicrm_api3')) {
+        // Aprox. CiviCRM >= 4.2
+        civicrm_api3('System', 'flush');
+      }
+      else {
+        drush_log(dt("CiviCRM: Could not find the function to flush the cache. What version of CiviCRM are you using?"), 'warning');
+      }
 
-    drush_log(dt("CiviCRM: cache clear finished"));
+      drush_log(dt("CiviCRM: cache clear finished"));
+    }
   }
 }
 
