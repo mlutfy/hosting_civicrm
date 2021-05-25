@@ -246,21 +246,24 @@ function _provision_civicrm_is_site_context($load_if_missing = FALSE) {
  * @param Boolean $load_if_missing Recommended in most cases. See do#2364871.
  */
 function _provision_civicrm_get_package_path($load_if_missing = FALSE) {
-  $module = _provision_civicrm_get_package_info();
+  // Issue#2942572 For D8 and D9, we only support having CiviCRM in /vendor
+  // Aegir package info functions are not CiviCRM-friendly. This is simpler.
+  if (drush_drupal_major_version() >= 8) {
+    $root = d()->root;
+    // If Drupal lives under a 'web' subdirectory (which is usually the case with composer),
+    // we remove the prefix, since the vendor directory is outside 'web'.
+    $root = preg_replace('#web/?$#', '', $root);
+    $crmpath = $root . '/vendor/civicrm/civicrm-core/';
 
-  if ($module) {
-    // Issue#2942572 For D8 and D9, for now, we only support having CiviCRM in /vendor
-    // In Drupal 8 / 9 the version key has been dropped from the info.yml file so rely on core version check
-    if (drush_drupal_major_version() >= 8) {
-      $root = d()->root;
-      // If Drupal lives under a 'web' subdirectory (which is usually the case with composer),
-      // we remove the prefix, since the vendor directory is outside 'web'.
-      $root = preg_replace('#web/?$#', '', $root);
-      $crmpath = $root . '/vendor/civicrm/civicrm-core/';
+    if (is_dir($crmpath)) {
       drush_log(dt('CiviCRM: civicrm is in @path', array('@path' => $crmpath)));
       return $crmpath;
     }
+  }
 
+  $module = _provision_civicrm_get_package_info();
+
+  if ($module) {
     // Get the parent directory of the module, which is in civicrm/drupal/civicrm.module
     $crmpath = dirname(dirname($module['filename']));
     drush_log(dt('CiviCRM: civicrm is in @path', array('@path' => $crmpath)));
@@ -632,9 +635,19 @@ function _provision_civicrm_codebase_version() {
   }
 
   $crmPath = _provision_civicrm_get_package_path();
+  $vendorPath = $crmPath . '/vendor/autoload.php';
+
+  if (drush_drupal_major_version() >= 8) {
+    $root = d()->root;
+    // If Drupal lives under a 'web' subdirectory (which is usually the case with composer),
+    // we remove the prefix, since the vendor directory is outside 'web'.
+    // Duplicates code from _provision_civicrm_get_package_path().
+    $root = preg_replace('#web/?$#', '', $root);
+    $vendorPath = $root . '/vendor/';
+  }
 
   if ($crmPath) {
-    require_once $crmPath . '/vendor/autoload.php';
+    require_once $vendorPath . '/autoload.php';
     require_once $crmPath . '/CRM/Utils/System.php';
     require_once $crmPath . '/CRM/Core/Exception.php';
     $codeVer = CRM_Utils_System::version();
