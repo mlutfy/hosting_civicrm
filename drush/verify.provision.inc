@@ -35,6 +35,11 @@ function drush_provision_civicrm_provision_verify($url = NULL) {
 
   drush_log(dt("CiviCRM: Running drush_civicrm_provision_verify"));
 
+  // Precaution to avoid "duplicate entry" that sometimes happens
+  if (drush_drupal_major_version() <= 7) {
+    variable_del('civicrm_class_loader');
+  }
+
   // This needs to be done before we initialize CiviCRM,
   // otherwise we will load with an old include path (civicrm_root).
   _provision_civicrm_regenerate_settings();
