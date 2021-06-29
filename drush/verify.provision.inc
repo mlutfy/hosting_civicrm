@@ -36,8 +36,10 @@ function drush_provision_civicrm_provision_verify($url = NULL) {
   drush_log(dt("CiviCRM: Running drush_civicrm_provision_verify"));
 
   // Precaution to avoid "duplicate entry" that sometimes happens
+  // Set to NULL instead of delete, because sometimes the quick write/read might
+  // cause Drupal to complicate about duplicate entries.
   if (drush_drupal_major_version() <= 7) {
-    variable_del('civicrm_class_loader');
+    variable_set('civicrm_class_loader', NULL);
   }
 
   // This needs to be done before we initialize CiviCRM,
@@ -101,9 +103,19 @@ function drush_provision_civicrm_post_provision_verify($url = NULL) {
     if (!_provision_civicrm_check_upgrade_mode()) {
       drush_log(dt("CiviCRM: calling cache clear"));
 
+      // Precaution to avoid "duplicate entry" that sometimes happens
+      if (drush_drupal_major_version() <= 7) {
+        variable_set('civicrm_class_loader', NULL);
+      }
+
       if (function_exists('civicrm_api3')) {
         // Aprox. CiviCRM >= 4.2
-        civicrm_api3('System', 'flush');
+        try {
+          civicrm_api3('System', 'flush', ['debug' => 1]);
+	}
+	catch (CiviCRM_API3_Exception $e) {
+          drush_log(dt('CiviCRM: failed to clear cache: "!error". The CiviCRM ConfigAndLog should have more details. Trace: !trace', ['!error' => $e->getMessage(), '!trace' => print_r($e->getExtraParams(), 1)]), 'warning');
+        }
       }
       else {
         drush_log(dt("CiviCRM: Could not find the function to flush the cache. What version of CiviCRM are you using?"), 'warning');
