@@ -653,7 +653,7 @@ function _provision_civicrm_codebase_version() {
     $codeVer = CRM_Utils_System::version();
   }
 
-  drush_log(dt('CiviCRM: code version is !ver', array('!ver' => $dbVer)));
+  drush_log(dt('CiviCRM: code version is !ver', array('!ver' => $codeVer)));
   return $codeVer;
 }
 
