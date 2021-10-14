@@ -60,7 +60,7 @@ function drush_provision_civicrm_post_provision_install($url = null) {
 function _provision_civicrm_install_civicrm($dbuser, $dbpass, $dbhost, $dbname, $lang) {
   // As of D8, the database schema and civicrm.settings.php
   // are generated when the module is first installed.
-  if (drush_drupal_major_version() == 8) {
+  if (drush_drupal_major_version() >= 8) {
     // SystemInstallEvent will be called from here with the first call of CRM_Core_Config,
     // which calls Core_BAO_ConfigSetting::applyLocale(), who will default to calling
     // Civi::settings()->get('lcMessages');
