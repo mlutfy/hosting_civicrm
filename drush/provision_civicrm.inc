@@ -389,6 +389,7 @@ function provision_civicrm_regenerate_settings_file($dbuser, $dbpass, $dbhost, $
   foreach ($files as $file) {
     if (file_exists($file)) {
       $settingsTplFile = $file;
+      break;
     }
   }
 
@@ -396,7 +397,7 @@ function provision_civicrm_regenerate_settings_file($dbuser, $dbpass, $dbhost, $
     drush_die(dt("Could not find CiviCRM settings template and therefore could not create settings file."));
   }
 
-  drush_log(dt("CiviCRM: Generating the settings file .."), 'ok');
+  drush_log(dt("CiviCRM: Generating the settings file using !file ..", array('!file' => $settingsTplFile)), 'ok');
 
   $protocol = (d()->ssl_enabled || d()->https_enabled) ? 'https' : 'http';
   $baseUrl = $protocol . '://' . d()->uri;
@@ -452,10 +453,6 @@ function provision_civicrm_regenerate_settings_file($dbuser, $dbpass, $dbhost, $
  */
 function provision_civicrm_civicrm_settings_template_alter(&$template) {
   $replacements = array();
-  $replacements['enable overrides to $civicrm_setting.'] = array(
-    'search_regex' => '/^.*?global.*civicrm_setting.*\n?/m',
-    'replace_line' => "global \$civicrm_setting;\n",
-  );
   $replacements['allow uploadDir to be overridden.'] = array(
     'search_regex' => '/^.*?civicrm_setting.*uploadDir.*\n?/m',
     'replace_line' => "\$civicrm_setting['Directory Preferences']['uploadDir'] = '%%uploadDir%%';\n",
