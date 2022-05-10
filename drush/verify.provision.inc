@@ -101,20 +101,27 @@ function drush_provision_civicrm_post_provision_verify($url = NULL) {
     // Only flush the cache if we are not upgrading. The upgrader already does a flush, and could
     // lead to odd errors such as: 'The dispatch policy prohibits event "hook_civicrm_permission"'
     if (!_provision_civicrm_check_upgrade_mode()) {
-      drush_log(dt("CiviCRM: calling cache clear"));
-
       // Precaution to avoid "duplicate entry" that sometimes happens
       if (drush_drupal_major_version() <= 7) {
+        drush_log(dt("CiviCRM: deleting the civicrm_class_loader variable"), 'ok');
         variable_set('civicrm_class_loader', NULL);
       }
 
+      // Aprox. CiviCRM >= 4.2
       if (function_exists('civicrm_api3')) {
-        // Aprox. CiviCRM >= 4.2
-        try {
-          civicrm_api3('System', 'flush', ['debug' => 1]);
-	}
-	catch (CiviCRM_API3_Exception $e) {
-          drush_log(dt('CiviCRM: failed to clear cache: "!error". The CiviCRM ConfigAndLog should have more details. Trace: !trace', ['!error' => $e->getMessage(), '!trace' => print_r($e->getExtraParams(), 1)]), 'warning');
+        // Run as a shell command, instead of PHP, so that fatal errors do not crash the verify task
+        $command = 'cd ' . escapeshellarg(d()->site_root) . ' && drush cc drush && drush @' . escapeshellarg(d()->uri) . ' cvapi --out=json system.flush';
+        drush_log(dt("CiviCRM: calling cache clear: %command", ['%command' => $command]), 'ok');
+        $json = system($command, $retval);
+        $output = json_decode($json, TRUE);
+        if ($retval || !empty($output['is_error'])) {
+          drush_log(dt("CiviCRM: cache clear failed (the ConfigAndLog should have more details): %output", ['%output' => $json]), 'warning');
+        }
+        elseif (!preg_match('/is_error.:0/', $json)) {
+          drush_log(dt("CiviCRM: cache clear may have failed: %output", ['%output' => $json]), 'warning');
+        }
+        else {
+          drush_log(dt("CiviCRM: cache clear success: %output", ['%output' => $json]), 'ok');
         }
       }
       else {
