@@ -17,8 +17,8 @@ Requirements
 ============
 
 - Required: Aegir >= 3.x
-- Recommended: CiviCRM >= 4.4 (CiviCRM 4.2-4.4 are still tested but require a patch, see [14]).
-- Supports Drupal 6, Drupal 7 and Drupal 8
+- Recommended: CiviCRM >= 5.0 (older versions might work but require a patch, see [14]).
+- Supports Drupal 6 to Drupal 9
 
 [14] https://github.com/mlutfy/hosting_civicrm/wiki/CiviCRM-version-support
 
@@ -107,8 +107,7 @@ Maintenance and development was then continued by Mathieu Lutfy [5], with the
 help of many contributors [6] and with great support from the CiviCRM core team
 and community. Front-end components were later added by Christopher Gervais [7].
 
-Ongoing development and maintenance by Coop SymbioTIC [8], Praxis Labs Coop [9]
-and Ergon Logic Enterprises [10].
+Ongoing development and maintenance by Coop SymbioTIC [8].
 
 [3] https://drupal.org/user/1261
 [4] http://civicrm.org/blogs/deepaksrivastava
@@ -116,8 +115,6 @@ and Ergon Logic Enterprises [10].
 [6] https://drupal.org/node/1063394/committers
 [7] https://drupal.org/u/ergonlogic
 [8] https://www.symbiotic.coop
-[9] http://praxis.coop
-[10] http://ergonlogic.com
 
 Thanks to Koumbit, Praxis, Ixiam, PTP, JMA consulting and NDI for financially
 supporting the development of this module.
@@ -126,9 +123,9 @@ supporting the development of this module.
 License
 =======
 
+(C) 2012-2022 Mathieu Lutfy <mathieu@bidon.ca>
+(C) 2012-2022 Coop SymbioTIC <info@symbiotic.coop>
 (C) 2012-2015 Christopher Gervais <https://www.drupal.org/u/ergonlogic>
-(C) 2012-2015 Mathieu Lutfy <mathieu@bidon.ca>
-(C) 2012-2015 Coop SymbioTIC <info@symbiotic.coop>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as
