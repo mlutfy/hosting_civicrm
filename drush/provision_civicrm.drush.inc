@@ -52,21 +52,3 @@ function provision_civicrm_provision_register_autoload() {
     provision_autoload_register_prefix('Provision_', dirname(__FILE__));
   }
 }
-
-/**
- * Implementation of hook_drush_command().
- */
-function provision_civicrm_drush_command() {
-  $items['provision-civicrm-civix'] = array(
-    'description' => 'Run a civicrm civix command.',
-    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
-    'aliases' => array('civix'),
-  );
-  $items['provision-civicrm-cli'] = array(
-    'description' => 'Run a civicrm cv command.',
-    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
-    'aliases' => array('cv'),
-  );
-
-  return $items;
-}
