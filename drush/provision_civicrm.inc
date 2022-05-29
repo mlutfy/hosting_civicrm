@@ -122,12 +122,11 @@ function _provision_civicrm_clear_config_cache() {
   //
   // Also, civicrm_cache_clear() assumes that _civi_init() has been
   // done, and if we init, then the Config.IDS.ini will be parsed.
-
-  $configFiles = array(
+  $configFiles = [
     '/files/civicrm/ConfigAndLog/Config.IDS.ini',
     '/files/civicrm/drush/ConfigAndLog/Config.IDS.ini',
     '/files/civicrm/templates_c/en_US/ConfigAndLog/Config.IDS.ini',
-  );
+  ];
 
   foreach ($configFiles as $c) {
     $ids = d()->site_path . $c;
@@ -139,7 +138,6 @@ function _provision_civicrm_clear_config_cache() {
         ->status();
     }
   }
-
 }
 
 /**
@@ -165,28 +163,6 @@ function _provision_civicrm_fixresourceurls() {
 }
 
 /**
- * Wrapper to update values in {civicrm_option_value}
- */
-function _provision_civicrm_update_option_value($key, $val) {
-  switch (drush_drupal_major_version()) {
-    case 6:
-      $oldval = drush_db_result(db_query("SELECT value FROM {civicrm_option_value} WHERE name = '%s'", $key));
-      drush_log(dt('CiviCRM: before UPDATE: old val for @key = @oldval', array('@key' => $key, '@oldval' => $oldval)));
-
-      db_query("UPDATE {civicrm_option_value} set value = '%s' where name = '%s'", array($val, $key));
-      drush_log(dt("CiviCRM: updated @key = @val", array('@key' => check_plain($key), '@val' => check_plain($val))));
-      break;
-    case 7:
-      $oldval = drush_db_result(db_query("SELECT value FROM {civicrm_option_value} WHERE name = :key", array(':key' => $key)));
-      drush_log(dt('CiviCRM: before UPDATE: old val for @key = @oldval', array('@key' => $key, '@oldval' => $oldval)));
-
-      db_query("UPDATE {civicrm_option_value} set value = :val where name = :key", array(':val' => $val, ':key' => $key));
-      drush_log(dt("CiviCRM: updated @key = @val", array('@key' => check_plain($key), '@val' => check_plain($val))));
-      break;
-  }
-}
-
-/**
  * Get an array of civicrm related options
  *
  * @param $op
@@ -203,14 +179,6 @@ function _provision_civicrm_drush_options($op = 'unknown') {
 
   foreach ($civi_opts as $opt => $val) {
     $civi_opts[$opt] = drush_get_option($opt, NULL);
-
-    /* Debugging code follows, comment out this line to enable it.
-    if ($civi_opts[$opt] == NULL) {
-      drush_set_error('PROVISION_CIVICRM_DRUSH_OPTIONS', "In $op: Failed to get valid $opt");
-    }
-    $dump = var_export($civi_opts[$opt], true);
-    drush_log(dt("In @op: $dump retrieved for @opt", array('@op' => $op, '@opt' => $opt)), 'warning');
-    //*/
   }
 
   return $civi_opts;
@@ -312,8 +280,6 @@ function _provision_civicrm_get_package_info() {
   else {
     // drush_log(dt('CiviCRM: civicrm not found in packages ' . print_r($packages, 1)));
   }
-
-  // drush_log('CiviCRM: MODULE = ' . print_r($module, 1));
 
   return $module;
 }
@@ -528,6 +494,9 @@ function provision_civicrm_verify_common() {
  *
  * Code forked from the CiviCRM drush module
  * Adapted to check the upgrade result and support multiple CiviCRM versions.
+ *
+ * @todo We should exec a process to run the upgrade, so that a failed upgrade
+ * does not make Aegir crash and/or rollback.
  */
 function _provision_civicrm_upgradedb() {
   drush_log(dt("CiviCRM: in _provision_civicrm_upgradedb(), calling _civicrm_init()"));
