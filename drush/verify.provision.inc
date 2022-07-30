@@ -110,7 +110,7 @@ function drush_provision_civicrm_post_provision_verify($url = NULL) {
       // Aprox. CiviCRM >= 4.2
       if (function_exists('civicrm_api3')) {
         // Run as a shell command, instead of PHP, so that fatal errors do not crash the verify task
-        $command = 'cd ' . escapeshellarg(d()->site_root) . ' && drush cc drush && drush @' . escapeshellarg(d()->uri) . ' cvapi --out=json system.flush';
+        $command = 'cd ' . escapeshellarg(d()->site_path) . ' && drush cc drush && drush @' . escapeshellarg(d()->uri) . ' cvapi --out=json system.flush';
         drush_log(dt("CiviCRM: calling cache clear: %command", ['%command' => $command]), 'ok');
         $json = system($command, $retval);
         $output = json_decode($json, TRUE);
