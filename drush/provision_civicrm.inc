@@ -145,21 +145,76 @@ function _provision_civicrm_clear_config_cache() {
  * There must be a much simpler/cleaner way of doing this..
  */
 function _provision_civicrm_fixresourceurls() {
-  drush_log(dt("CiviCRM: Running civicrm_config_update() to fix URL/path settings."));
+  drush_log(dt("CiviCRM: Running _provision_civicrm_fixresourceurls to fix URL/path settings."));
 
-  if (function_exists('drush_civicrm_update_cfg')) {
-    drush_civicrm_update_cfg_validate();
-    drush_civicrm_update_cfg();
-  }
-  elseif (function_exists('civicrm_config_update')) {
-    civicrm_config_update();
-  }
-  else {
-    drush_log(dt("CiviCRM: Could not find a drush function to update the CiviCRM url/path settings."), 'error');
-    return;
+  $protocol = (d()->ssl_enabled || d()->https_enabled) ? 'https' : 'http';
+  $root = d()->root;
+  $host = d()->uri;
+
+  // Ignoring userFrameworkResourceURL, which should be set to '[civicrm.root]'
+  // and should not change when doing a migrate, for example.
+
+  // Only update the Directory settings if not using relative paths
+  $settings = [
+    'uploadDir' => "$root/sites/$host/files/civicrm/upload",
+    'customFileUploadDir' => "$root/sites/$host/files/civicrm/custom",
+    'imageUploadDir' => "$root/sites/$host/files/civicrm/persist/contribute",
+    'imageUploadURL' => "$protocol://$host/sites/$host/files/civicrm/persist/contribute",
+  ];
+
+  foreach ($settings as $setting => $default) {
+    $oldval = Civi::settings()->get($setting);
+
+    if (strpos($oldval, '[civicrm.files]') === FALSE) {
+      Civi::settings()->set($setting, $default);
+    }
   }
 
-  drush_log(dt("CiviCRM: Finished civicrm_config_update()."));
+  $extensions_suffix = NULL;
+  $extensionsDir = Civi::settings()->get('extensionsDir');
+  $extensionsURL = Civi::settings()->get('extensionsURL');
+
+  drush_log('CiviCRM: current extensionsDir = ' . $extensionsDir, 'ok');
+
+  // Only update the extensionsDir if not using relative paths
+  if (strpos($extensionsDir, '[civicrm.files]') === FALSE) {
+    // Maybe a simple regexp would be simpler, but would require more testing
+    // This was copied from provision_symbiotic
+    if (file_exists("$root/sites/$host/modules/extensions/")) {
+      // Symbiotic default
+      $extensions_suffix = 'modules/extensions';
+    }
+    elseif (file_exists("$root/sites/$host/modules/civi-extensions/")) {
+      // Legacy Symbiotic
+      $extensions_suffix = 'modules/civi-extensions';
+    }
+    elseif (file_exists("$root/sites/$host/civiext/")) {
+      // civicrm.org
+      $extensions_suffix = 'civiext';
+    }
+    elseif (file_exists("$root/sites/$host/files/civicrm/extensions/")) {
+      $extensions_suffix = 'files/civicrm/extensions';
+    }
+
+    if ($extensions_suffix) {
+      if ($extensionsDir != "$root/sites/$host/$extensions_suffix/") {
+        drush_log(dt('CiviCRM: updated extensionsDir to @path', ['@path' => "$root/sites/$host/$extensions_suffix/"]), 'ok');
+        Civi::settings()->set('extensionsDir', "$root/sites/$host/$extensions_suffix/");
+      }
+      if ($extensionsURL != "$protocol://$host/sites/$host/$extensions_suffix") {
+        drush_log(dt('CiviCRM: updated extensionsURL to @url', ['@url' => "$protocol://$host/sites/$host/$extensions_suffix/"]), 'ok');
+        Civi::settings()->set('extensionsURL', "$protocol://$host/sites/$host/$extensions_suffix");
+      }
+    }
+    else {
+      // Reset to the CiviCRM default
+      drush_log(dt('CiviCRM: updated extensionsDir to @path', ['@path' => "[civicrm.files]"]), 'ok');
+      Civi::settings()->set('extensionsDir', '[civicrm.files]/ext/');
+      Civi::settings()->set('extensionsURL', '[civicrm.files]/ext/');
+    }
+  }
+
+  drush_log(dt("CiviCRM: Finished _provision_civicrm_fixresourceurls()."));
 }
 
 /**
@@ -469,15 +524,6 @@ function provision_civicrm_verify_common() {
       provisionacl_set_acl('group', $group, 'r--', array($file), TRUE);
     }
   }
-
-  drush_set_option('oldVal_1', drush_get_option('civicrm_old_path'));
-  drush_set_option('newVal_1', drush_get_context('DRUSH_DRUPAL_ROOT'));
-
-  drush_set_option('oldVal_2', drush_get_option('civicrm_old_baseurl'));
-  drush_set_option('newVal_2', 'http://' . drush_get_option('uri'));
-
-  // Update database settings for the directory paths
-  drush_civicrm_update_cfg();
 
   // Update Resource URLs
   _provision_civicrm_fixresourceurls();
