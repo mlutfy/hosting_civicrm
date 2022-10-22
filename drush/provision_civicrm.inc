@@ -467,42 +467,6 @@ function provision_civicrm_regenerate_settings_file($dbuser, $dbpass, $dbhost, $
   drush_log(dt("Settings file generated: !file", array('!file' => $configFile)), 'ok');
 }
 
-/**
- * Implements hook_civicrm_settings_template_alter().
- *
- * @see provision_civicrm_civicrm_settings_parameters_alter().
- */
-function provision_civicrm_civicrm_settings_template_alter(&$template) {
-  $replacements = array();
-  $replacements['allow uploadDir to be overridden.'] = array(
-    'search_regex' => '/^.*?civicrm_setting.*uploadDir.*\n?/m',
-    'replace_line' => "\$civicrm_setting['Directory Preferences']['uploadDir'] = '%%uploadDir%%';\n",
-  );
-
-  foreach ($replacements as $desc => $line) {
-    // Throw a warning if any of our replacements cannot be found.
-    if (!preg_match($line['search_regex'], $template)) {
-      drush_log(dt('CiviCRM: Failed to ' . $desc), 'warning');
-    }
-    else {
-      $count = 0;
-      $template = preg_replace($line['search_regex'], $line['replace_line'], $template, -1, $count);
-      if ($count > 0) {
-        drush_log(dt('CiviCRM: Succeeded to ' . $desc), 'success');
-      }
-    }
-  }
-}
-
-/**
- * Implements hook_civicrm_settings_parameters_alter().
- *
- * @see provision_civicrm_civicrm_settings_template_alter().
- */
-function provision_civicrm_civicrm_settings_parameters_alter(&$params) {
-  $params['uploadDir'] = d()->site_path . "/files/civicrm/upload";
-}
-
 function provision_civicrm_verify_common() {
   drush_log(dt("CiviCRM: in provision_civicrm_verify_common()."));
 
