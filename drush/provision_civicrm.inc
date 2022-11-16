@@ -397,11 +397,12 @@ function provision_civicrm_regenerate_settings_file($dbuser, $dbpass, $dbhost, $
   $drupalRoot = d()->root;
   $siteRoot   = d()->site_path;
   $crmPath    = _provision_civicrm_get_package_path();
+  $civicrm_settings_filename = "$siteRoot/civicrm.settings.php";
 
-  $files = array(
+  $files = [
     "$crmPath/templates/CRM/common/civicrm.settings.php.template",
     "$crmPath/templates/CRM/common/civicrm.settings.php.tpl"
-  );
+  ];
 
   // Allow overriding the template file search paths.
   drush_command_invoke_all_ref('civicrm_settings_template_files_alter', $files);
@@ -435,7 +436,7 @@ function provision_civicrm_regenerate_settings_file($dbuser, $dbpass, $dbhost, $
     $cms = $v['cms'];
   }
 
-  $params = array(
+  $params = [
     'crmRoot' => $crmPath,
     'templateCompileDir' => "$siteRoot/files/civicrm/templates_c",
     'frontEnd' => 0,
@@ -450,21 +451,68 @@ function provision_civicrm_regenerate_settings_file($dbuser, $dbpass, $dbhost, $
     'CMSdbHost' => $db_spec['host'],
     'CMSdbName' => $db_spec['database'],
     'siteKey' => $sitekey,
-  );
+  ];
+
+  // Fetch the existing cred/sign keys, if the civicrm.settings.php file exists
+  // Copied from hosting_wordpress
+  if (file_exists($civicrm_settings_filename)) {
+    $settings = file_get_contents($civicrm_settings_filename);
+
+    // Match: define( '_CIVICRM_CRED_KEYS', 'aes-cbc:....');
+    if (preg_match("/define\(\s*'_CIVICRM_CRED_KEYS',\s*'([-_:0-9A-Za-z]+)'\)/", $settings, $matches)) {
+      $params['credKeys'] = $matches[1];
+    }
+    elseif (preg_match("/define\(\s*'CIVICRM_CRED_KEYS',\s*'([-_:0-9A-Za-z]+)'\)/", $settings, $matches)) {
+      $params['credKeys'] = $matches[1];
+    }
+    else {
+      drush_log(dt("CiviCRM: CIVICRM_CRED_KEYS not found"), 'warning');
+    }
+
+    // Match: define( '_CIVICRM_SIGN_KEYS', 'jw-hs256:....');
+    if (preg_match("/define\(\s*'_CIVICRM_SIGN_KEYS',\s*'([-_:0-9A-Za-z]+)'\)/", $settings, $matches)) {
+      $params['signKeys'] = $matches[1];
+    }
+    elseif (preg_match("/define\(\s*'CIVICRM_SIGN_KEYS',\s*'([-_:0-9A-Za-z]+)'\)/", $settings, $matches)) {
+      $params['signKeys'] = $matches[1];
+    }
+    else {
+      drush_log(dt("CiviCRM: CIVICRM_SIGN_KEYS not found"), 'warning');
+    }
+  }
+
+  // Generate new cred/sign keys if necessary
+  if (empty($params['credKeys']) || empty($params['signKeys']) || preg_match('/RANDOM_/', $params['credKeys']) || preg_match('/RANDOM_/', $params['signKeys'])) {
+    drush_log(dt("CiviCRM: Generating new CIVICRM_SIGN_KEYS and CIVICRM_CRED_KEYS"), 'ok');
+
+    // Copied from:
+    // setup/plugins/installFiles/GenerateSignKey.civi-setup.php
+    // setup/plugins/installFiles/GenerateCredKey.civi-setup.php
+    $toAlphanum = function($bits) {
+      return preg_replace(';[^a-zA-Z0-9];', '', base64_encode($bits));
+    };
+
+    $params['credKeys'] = 'aes-cbc:hkdf-sha256:' . $toAlphanum(random_bytes(37));
+    $params['signKeys'] = 'jwt-hs256:hkdf-sha256:' . $toAlphanum(random_bytes(40));
+  }
+
+  // Generate the new file contents
   $str = file_get_contents($settingsTplFile);
+
   // Allow changes to the settings file template.
   drush_command_invoke_all_ref('civicrm_settings_template_alter', $str);
+
   // Allow addition to and overrides of the settings file parameters.
   drush_command_invoke_all_ref('civicrm_settings_parameters_alter', $params);
+
   foreach ($params as $key => $value) {
     $str = str_replace('%%' . $key . '%%', $value, $str);
   }
   $str = trim($str);
 
-  $configFile = "$siteRoot/civicrm.settings.php";
-  civicrm_write_file($configFile, $str);
-  @drush_op('chmod', "$configFile", 0644);
-  drush_log(dt("Settings file generated: !file", array('!file' => $configFile)), 'ok');
+  civicrm_write_file($civicrm_settings_filename, $str);
+  @drush_op('chmod', "$civicrm_settings_filename", 0644);
+  drush_log(dt("Settings file generated: !file", array('!file' => $civicrm_settings_filename)), 'ok');
 }
 
 function provision_civicrm_verify_common() {
