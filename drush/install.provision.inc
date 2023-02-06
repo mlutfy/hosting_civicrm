@@ -71,7 +71,13 @@ function _provision_civicrm_install_civicrm($dbuser, $dbpass, $dbhost, $dbname, 
     }
 
     drush_log(dt("CiviCRM: Enabling the CiviCRM module."), 'ok');
-    \Drupal::service('module_installer')->install(['civicrm']);
+    try {
+      \Drupal::service('module_installer')->install(['civicrm']);
+    }
+    catch (Exception $e) {
+      // Do whatever is necessary to help debug installation problems
+      drush_log(dt("CiviCRM: failed to enable CiviCRM: !error - !trace", ['!error' => $e->getMessage(), '!trace' => print_r($e->getTrace(), 1)]), 'error');
+    }
     return;
   }
 
@@ -116,7 +122,13 @@ function _provision_civicrm_install_civicrm($dbuser, $dbpass, $dbhost, $dbname, 
   }
 
   drush_log(dt("CiviCRM: Enabling the CiviCRM module."), 'ok');
-  module_enable(array('civicrm'));
+  try {
+    module_enable(array('civicrm'));
+  }
+  catch (Exception $e) {
+    // Do whatever is necessary to help debug installation problems
+    drush_log(dt("CiviCRM: failed to enable CiviCRM: !error - !trace", ['!error' => $e->getMessage(), '!trace' => print_r($e->getTrace(), 1)]), 'error');
+  }
 
   // Save the site key, in case we verify later on, it will regenerate
   // the civicrm.settings.php
