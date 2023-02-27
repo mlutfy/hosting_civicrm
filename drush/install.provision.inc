@@ -122,25 +122,7 @@ function _provision_civicrm_install_civicrm($dbuser, $dbpass, $dbhost, $dbname, 
   }
 
   drush_log(dt("CiviCRM: Enabling the CiviCRM module."), 'ok');
-  try {
-    module_enable(array('civicrm'));
-  }
-  catch (Exception $e) {
-    // Do whatever is necessary to help debug installation problems
-    drush_log(dt("CiviCRM: failed to enable CiviCRM: !error - !trace", ['!error' => $e->getMessage(), '!trace' => print_r($e->getTrace(), 1)]), 'error');
-  }
-
-  // Save the site key, in case we verify later on, it will regenerate
-  // the civicrm.settings.php
-  // c.f. duplication from provision_civicrm_regenerate_settings()
-  drush_log(dt("CiviCRM: Saving sitekey and other settings."));
-
-  $civi_opts = _provision_civicrm_drush_options('post verify');
-  $civi_opts['civicrm_sitekey'] = CIVICRM_SITE_KEY;
-
-  foreach ($civi_opts as $opt => $val) {
-    drush_set_option($opt, $val, 'site');
-  }
+  _provision_civicrm_run_drush_command('en civicrm -y');
 }
 
 /**

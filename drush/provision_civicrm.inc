@@ -713,3 +713,35 @@ function _provision_civicrm_database_version() {
   drush_log(dt('CiviCRM: db version is !ver', array('!ver' => $dbVer)));
   return $dbVer;
 }
+
+/**
+ * Run a command by invoking a shell instead of running it in the
+ * same process as Aegir, because it makes error handling more difficult.
+ *
+ * You must call escapeshellarg() before calling this function, if there are any args in the $command.
+ *
+ * Errors are logged as warnings to avoid an Aegir rollback (because those errors
+ * should not happen, and if they do, we want to be able to debug).
+ */
+function _provision_civicrm_run_drush_command($command) {
+  $command = 'cd ' . escapeshellarg(d()->site_path) . ' && drush --quiet cc drush && drush --quiet @' . escapeshellarg(d()->uri) . ' ' . $command;
+  drush_log(dt("CiviCRM: running: %command", ['%command' => $command]), 'ok');
+  $json = system($command, $retval);
+  // This assumes we are always using --out=json for CiviCRM
+  $output = json_decode($json, TRUE);
+  if ($retval == 1 && $json == 'Do you really want to continue? (y/n): y') {
+    // Not seeing any error.. shrug
+    drush_log(dt("CiviCRM: command success: %output", ['%output' => $json]), 'ok');
+  }
+  elseif ($retval || (is_array($output) && !empty($output['is_error']))) {
+    drush_log(dt("CiviCRM: command failed {$retval} (the ConfigAndLog should have more details): %output", ['%output' => $json]), 'warning');
+  }
+  elseif (!preg_match('/is_error.:0/', $json)) {
+    drush_log(dt("CiviCRM: command may have failed: %output", ['%output' => $json]), 'warning');
+  }
+  else {
+    drush_log(dt("CiviCRM: command success: %output", ['%output' => $json]), 'ok');
+  }
+
+  return $json;
+}

@@ -110,19 +110,7 @@ function drush_provision_civicrm_post_provision_verify($url = NULL) {
       // Aprox. CiviCRM >= 4.2
       if (function_exists('civicrm_api3')) {
         // Run as a shell command, instead of PHP, so that fatal errors do not crash the verify task
-        $command = 'cd ' . escapeshellarg(d()->site_path) . ' && drush cc drush && drush @' . escapeshellarg(d()->uri) . ' cvapi --out=json system.flush';
-        drush_log(dt("CiviCRM: calling cache clear: %command", ['%command' => $command]), 'ok');
-        $json = system($command, $retval);
-        $output = json_decode($json, TRUE);
-        if ($retval || !empty($output['is_error'])) {
-          drush_log(dt("CiviCRM: cache clear failed (the ConfigAndLog should have more details): %output", ['%output' => $json]), 'warning');
-        }
-        elseif (!preg_match('/is_error.:0/', $json)) {
-          drush_log(dt("CiviCRM: cache clear may have failed: %output", ['%output' => $json]), 'warning');
-        }
-        else {
-          drush_log(dt("CiviCRM: cache clear success: %output", ['%output' => $json]), 'ok');
-        }
+        _provision_civicrm_run_drush_command('cvapi --out=json system.flush');
       }
       else {
         drush_log(dt("CiviCRM: Could not find the function to flush the cache. What version of CiviCRM are you using?"), 'warning');
