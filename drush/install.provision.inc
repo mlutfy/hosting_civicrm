@@ -97,7 +97,7 @@ function _provision_civicrm_install_civicrm($dbuser, $dbpass, $dbhost, $dbname, 
   }
 
   // NB: civicrm drush functions expect the parent dir of the civicrm code base.
-  $modPath = $crmPath . '/../';
+  $modPath = dirname($crmPath) . '/';
 
   // Setup all required files/civicrm/* directories
   if (!_civicrm_create_files_dirs($civicrmInstallerHelper, $modPath)) {
