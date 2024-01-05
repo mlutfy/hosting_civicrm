@@ -60,7 +60,28 @@ function drush_provision_civicrm_post_provision_install($url = null) {
 function _provision_civicrm_install_civicrm($dbuser, $dbpass, $dbhost, $dbname, $lang) {
   // As of D8, the database schema and civicrm.settings.php
   // are generated when the module is first installed.
-  if (drush_drupal_major_version() >= 8) {
+  $drupal_core_version = drush_drupal_major_version();
+
+  // Transition code, provision might not have this function
+  if (function_exists('provision_get_drupal_core_version')) {
+    $v = provision_get_drupal_core_version();
+    if ($v) {
+      $drupal_core_version = $v;
+    }
+  }
+
+  drush_log(dt('CiviCRM: Detected Drupal core version: %version', ['%version' => $drupal_core_version]), 'ok');
+
+  if (version_compare($drupal_core_version, 10, '>=')) {
+    $command = 'drush pm:install civicrm -y';
+    drush_log(dt("Drupal: running: %command", ['%command' => $command]), 'ok');
+    provision_file()->chmod(d()->site_path, 0755);
+    $output = system($command, $retval);
+    drush_log(dt("Drupal: retval=%retval, output: %output", ['%retval' => $retval, '%output' => $output]), $retval == 0 ? 'ok' : 'error');
+    provision_file()->chmod(d()->site_path, 0555);
+    return;
+  }
+  elseif (drush_drupal_major_version() >= 8) {
     // SystemInstallEvent will be called from here with the first call of CRM_Core_Config,
     // which calls Core_BAO_ConfigSetting::applyLocale(), who will default to calling
     // Civi::settings()->get('lcMessages');
