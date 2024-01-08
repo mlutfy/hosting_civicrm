@@ -38,7 +38,7 @@ function drush_provision_civicrm_provision_verify($url = NULL) {
   // Precaution to avoid "duplicate entry" that sometimes happens
   // Set to NULL instead of delete, because sometimes the quick write/read might
   // cause Drupal to complicate about duplicate entries.
-  if (drush_drupal_major_version() <= 7) {
+  if (drush_drupal_major_version() <= 7 && function_exists('variable_set')) {
     variable_set('civicrm_class_loader', NULL);
   }
 
