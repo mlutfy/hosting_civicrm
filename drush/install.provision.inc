@@ -79,8 +79,12 @@ function _provision_civicrm_install_civicrm($dbuser, $dbpass, $dbhost, $dbname, 
     provision_file()->chmod(d()->site_path, 0555);
     // Fix file permissions so that www-data can write
     drush_log(dt("CiviCRM: running fix-drupal-site-ownership.sh and permissions..."), 'ok');
-    drush_shell_exec("sudo --non-interactive /usr/local/bin/fix-drupal-site-ownership.sh --site-path=%s --script-user=%s --web-group=%s", d()->root, d()->server->script_user, d()->server->web_group);
-    drush_shell_exec("sudo --non-interactive /usr/local/bin/fix-drupal-site-permissions.sh --site-path=%s --script-user=%s --web-group=%s", d()->root, d()->server->script_user, d()->server->web_group);
+    drush_shell_exec("sudo --non-interactive /usr/local/bin/fix-drupal-site-ownership.sh --site-path=%s --script-user=%s --web-group=%s", d()->site_path, d()->server->script_user, d()->server->web_group);
+    $output = implode('', drush_shell_exec_output());
+    drush_log(dt("CiviCRM: fix-drupal-site-ownership.sh output: %output", ['%output' => $output]), 'ok');
+    drush_shell_exec("sudo --non-interactive /usr/local/bin/fix-drupal-site-permissions.sh --site-path=%s", d()->site_path);
+    $output = implode('', drush_shell_exec_output());
+    drush_log(dt("CiviCRM: fix-drupal-site-permissions.sh output: %output", ['%output' => $output]), 'ok');
     drush_log(dt("CiviCRM: finished running fix-drupal-site-ownership.sh and permissions"), 'ok');
     return;
   }
