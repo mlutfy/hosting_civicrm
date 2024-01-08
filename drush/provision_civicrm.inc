@@ -111,36 +111,6 @@ function _provision_civicrm_get_default_locale() {
 }
 
 /**
- * Clear Config.IDS.ini files from various possible locations.
- */
-function _provision_civicrm_clear_config_cache() {
-  drush_log(dt("CiviCRM: Clearing config cache."));
-  // Remove the Config.IDS.ini file (d.o#1226668)
-  // Usually 'verify' will call civicrm_cache_clear() which will
-  // delete most of the contents of template_c, but there have been
-  // some hard to trace bugs, so we are not taking any chances.
-  //
-  // Also, civicrm_cache_clear() assumes that _civi_init() has been
-  // done, and if we init, then the Config.IDS.ini will be parsed.
-  $configFiles = [
-    '/files/civicrm/ConfigAndLog/Config.IDS.ini',
-    '/files/civicrm/drush/ConfigAndLog/Config.IDS.ini',
-    '/files/civicrm/templates_c/en_US/ConfigAndLog/Config.IDS.ini',
-  ];
-
-  foreach ($configFiles as $c) {
-    $ids = d()->site_path . $c;
-
-    if (provision_file()->exists($ids)->status()) {
-      provision_file()->unlink($ids)
-        ->succeed('CiviCRM: Removed @path')
-        ->fail('CiviCRM: Could not remove @path')
-        ->status();
-    }
-  }
-}
-
-/**
  * Update the CiviCRM Resource URLs
  * There must be a much simpler/cleaner way of doing this..
  */
@@ -548,9 +518,6 @@ function provision_civicrm_verify_common() {
 
   // Update Resource URLs
   _provision_civicrm_fixresourceurls();
-
-  // Clear Config.IDS.ini
-  _provision_civicrm_clear_config_cache();
 
   drush_log(dt("CiviCRM: leaving provision_civicrm_verify_common()."));
   return TRUE;

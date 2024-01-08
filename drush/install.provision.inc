@@ -38,9 +38,6 @@ function drush_provision_civicrm_post_provision_install($url = null) {
   // Fix some paths (not really necessary since 4.x, works fine after install).
   // _provision_civicrm_fixresourceurls();
 
-  // Clear Config.IDS.ini
-  _provision_civicrm_clear_config_cache();
-
   drush_log(dt("CiviCRM: Installation complete!"), 'ok');
 }
 
@@ -73,12 +70,18 @@ function _provision_civicrm_install_civicrm($dbuser, $dbpass, $dbhost, $dbname, 
   drush_log(dt('CiviCRM: Detected Drupal core version: %version', ['%version' => $drupal_core_version]), 'ok');
 
   if (version_compare($drupal_core_version, 10, '>=')) {
+    // Install CiviCRM using drush
     $command = 'drush pm:install civicrm -y';
-    drush_log(dt("Drupal: running: %command", ['%command' => $command]), 'ok');
+    drush_log(dt("CiviCRM: running: %command", ['%command' => $command]), 'ok');
     provision_file()->chmod(d()->site_path, 0755);
     $output = system($command, $retval);
-    drush_log(dt("Drupal: retval=%retval, output: %output", ['%retval' => $retval, '%output' => $output]), $retval == 0 ? 'ok' : 'error');
+    drush_log(dt("CiviCRM: retval=%retval, output: %output", ['%retval' => $retval, '%output' => $output]), $retval == 0 ? 'ok' : 'error');
     provision_file()->chmod(d()->site_path, 0555);
+    // Fix file permissions so that www-data can write
+    drush_log(dt("CiviCRM: running fix-drupal-site-ownership.sh and permissions..."), 'ok');
+    drush_shell_exec("sudo --non-interactive /usr/local/bin/fix-drupal-site-ownership.sh --site-path=%s --script-user=%s --web-group=%s", d()->root, d()->server->script_user, d()->server->web_group);
+    drush_shell_exec("sudo --non-interactive /usr/local/bin/fix-drupal-site-permissions.sh --site-path=%s --script-user=%s --web-group=%s", d()->root, d()->server->script_user, d()->server->web_group);
+    drush_log(dt("CiviCRM: finished running fix-drupal-site-ownership.sh and permissions"), 'ok');
     return;
   }
   elseif (drush_drupal_major_version() >= 8) {
