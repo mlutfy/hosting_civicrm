@@ -402,7 +402,7 @@ function provision_civicrm_regenerate_settings_file($dbuser, $dbpass, $dbhost, $
 
   $protocol = (d()->ssl_enabled || d()->https_enabled) ? 'https' : 'http';
   $baseUrl = $protocol . '://' . d()->uri;
-  $db_spec = drush_civicrm_get_db_spec();
+  $creds = d()->service('db')->fetch_site_credentials();
 
   // Check version: since 4.1, Drupal6 must be used for the UF in D6
   // The file civicrm-version.php appeared around 4.0, so it is safe to assume
@@ -421,14 +421,14 @@ function provision_civicrm_regenerate_settings_file($dbuser, $dbpass, $dbhost, $
     'frontEnd' => 0,
     'cms' => $cms,
     'baseURL' => $baseUrl,
-    'dbUser' => $dbuser,
-    'dbPass' => $dbpass,
-    'dbHost' => $dbhost,
-    'dbName' => $dbname,
-    'CMSdbUser' => $db_spec['username'],
-    'CMSdbPass' => $db_spec['password'],
-    'CMSdbHost' => $db_spec['host'],
-    'CMSdbName' => $db_spec['database'],
+    'dbUser' => $creds['db_user'],
+    'dbPass' => $creds['db_passwd'],
+    'dbHost' => $creds['db_host'],
+    'dbName' => $creds['db_name'],
+    'CMSdbUser' => $creds['db_name'],
+    'CMSdbPass' => $creds['db_passwd'],
+    'CMSdbHost' => $creds['db_host'],
+    'CMSdbName' => $creds['db_name'],
     'siteKey' => $sitekey,
   ];
 
