@@ -10,41 +10,41 @@ function strip($value) {
   return preg_replace('!^([\'"])(.*)\1$!', '$2', $value);
 }
 
-// FIXME
-$corePath = '/var/aegir/platforms/civicrm-d7/sites/all/modules/civicrm';
+// We are running inside cv, so all CiviCRM vars are available
+$corePath = $GLOBALS['civicrm_root'];
 
 // Grab Drush relevant variables
 require_once getcwd() . '/drushrc.php';
 
 \Civi\Setup::assertProtocolCompatibility(1.0);
 \Civi\Setup::init([
-  // This is just enough information to get going. Drupal.civi-setup.php does more scanning.
-  'cms' => 'Drupal', // Auto-fixed below
+  // This is just enough information to get going. *.civi-setup.php does more scanning.
+  'cms' => CIVICRM_UF,
+  // This should not be necessary but otherwise we get very weird results
+  // such as: http://crm.example.org/usr/local/bin/usr/local/bin/aegir
+  // c.f. civicrm-core/setup/plugins/init/Drupal8.civi-setup.php
+  'cmsBaseUrl' => CIVICRM_UF_BASEURL,
   'srcPath' => $corePath,
-  // 'lang' => $lang,
-  'db' => [
-    'server' => $_SERVER['db_host'],
-    'username' => $_SERVER['db_user'],
-    'password' => $_SERVER['db_passwd'],
-    'database' => $_SERVER['db_name'],
-    'dbSSL' => '', // Need to set if relevant later
-    'CMSdbSSL' => '', // Need to set if relevant later
- ],
 ]);
 
-// Setup initial URLs
-$ctrl = \Civi\Setup::instance()->createController()->getCtrl();
-$ctrl->setUrls([
-  'ctrl' => url('civicrm'),
-  // 'res' => $coreUrl . '/setup/res/',
-  // 'jquery.js' => $coreUrl . '/bower_components/jquery/dist/jquery.min.js',
-  // 'font-awesome.css' => $coreUrl . '/bower_components/font-awesome/css/font-awesome.min.css',
-]);
+// init() made the initial guess. Now we can overwrite with user-supplied data.
+$setup = \Civi\Setup::instance();
+$model = $setup->getModel();
+$model->db = [
+  'server' => $_SERVER['db_host'],
+  'username' => $_SERVER['db_user'],
+  'password' => $_SERVER['db_passwd'],
+  'database' => $_SERVER['db_name'],
+  'dbSSL' => '', // Need to set if relevant later
+  'CMSdbSSL' => '', // Need to set if relevant later
+];
+// if ($lang) {
+//  $model->lang = $lang;
+//}
 
 /**
  * @var \Civi\Setup\Model $model
  */
-$setup = $ctrl->getSetup();
 $model = $setup->getModel();
 
 // Is there an existing civicrm.settings.php file? If so use existing values
@@ -170,5 +170,5 @@ if ($pos !== FALSE) {
 }
 
 // Output the file
-echo "Path = " . $model->settingsPath . "\n";
-file_put_contents($model->settingsPath . '.TEST', $str);
+file_put_contents($model->settingsPath, $str);
+chmod($model->settingsPath, 0440);

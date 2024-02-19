@@ -340,26 +340,11 @@ function _provision_civicrm_regenerate_settings() {
     drush_log('CiviCRM: no site key found from the front-end.');
   }
 
-  $db_user = drush_get_option('db_user', NULL, 'site');
-  $db_passwd = drush_get_option('db_passwd', NULL, 'site');
-  $db_host = drush_get_option('db_host', NULL, 'site');
-  $db_name = drush_get_option('db_name', NULL, 'site');
+  // @todo FIXME pass the civicrm_sitekey if set in the frontend
+  provision_file()->chmod(d()->site_path, 0755);
+  _provision_civicrm_run_cv_command('php:script ' . dirname(__DIR__) . '/cv/regenerate-settings.php');
+  provision_file()->chmod(d()->site_path, 0555);
 
-  // include civicrm installer helper file (otherwise PEAR DB.php will fail to include parts)
-  // FIXME : we should test whether this is still necessary.
-  $drupalRoot = drush_get_context('DRUSH_DRUPAL_ROOT');
-  $crmPath = _provision_civicrm_get_package_path();
-
-  $civicrmInstallerHelper = $crmPath . "/install/civicrm.php";
-
-  if (! file_exists($civicrmInstallerHelper) ) {
-    drush_log(dt("CiviCRM installer helper file is missing. Not running provision_civicrm_regenerate_settings()."), 'error');
-    return;
-  }
-
-  require_once "$civicrmInstallerHelper";
-
-  provision_civicrm_regenerate_settings_file($db_user, $db_passwd, $db_host, $db_name, $crmPath);
   drush_log(dt("CiviCRM: Generated config civicrm.settings.php file"), 'ok');
   drush_log(dt("CiviCRM: leaving provision_civicrm_regenerate_settings()."));
 }
@@ -601,6 +586,7 @@ function _provision_civicrm_upgradedb() {
  * Check whether to set the upgrade mode
  */
 function _provision_civicrm_check_upgrade_mode() {
+  drush_log(dt("CiviCRM: in _provision_civicrm_check_upgrade_mode()"));
   // Sets the civicrm upgrade mode of the code/db version do not match
   $codeVer = _provision_civicrm_codebase_version();
   $dbVer = _provision_civicrm_database_version();
@@ -613,6 +599,7 @@ function _provision_civicrm_check_upgrade_mode() {
     }
   }
 
+  drush_log(dt("CiviCRM: leaving _provision_civicrm_check_upgrade_mode()"));
   return FALSE;
 }
 
@@ -714,6 +701,32 @@ function _provision_civicrm_run_drush_command($command) {
   }
   elseif (!preg_match('/is_error.:0/', $json)) {
     drush_log(dt("CiviCRM: command may have failed: %output", ['%output' => $json]), 'warning');
+  }
+  else {
+    drush_log(dt("CiviCRM: command success: %output", ['%output' => $json]), 'ok');
+  }
+
+  return $json;
+}
+
+/**
+ * Run a command by invoking a shell instead of running it in the
+ * same process as Aegir, because it makes error handling more difficult.
+ *
+ * You must call escapeshellarg() before calling this function, if there are any args in the $command.
+ *
+ * Errors are logged as warnings to avoid an Aegir rollback (because those errors
+ * should not happen, and if they do, we want to be able to debug).
+ */
+function _provision_civicrm_run_cv_command($command) {
+  // Always non-interactive (cv -n)
+  $command = 'cd ' . escapeshellarg(d()->site_path) . ' && cv -n ' . $command;
+  drush_log(dt("CiviCRM: running: %command", ['%command' => $command]), 'ok');
+  $json = system($command, $retval);
+  // Output is always json
+  $output = json_decode($json, TRUE);
+  if ($retval || (is_array($output) && !empty($output['is_error']))) {
+    drush_log(dt("CiviCRM: command failed {$retval} (the ConfigAndLog should have more details): %output", ['%output' => $json]), 'warning');
   }
   else {
     drush_log(dt("CiviCRM: command success: %output", ['%output' => $json]), 'ok');
