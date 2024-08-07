@@ -67,7 +67,6 @@ function _provision_civicrm_install_civicrm($dbuser, $dbpass, $dbhost, $dbname, 
   provision_file()->chmod(d()->site_path, 0555)
     ->succeed('Changed permissions of <code>@path</code> to @perm')
     ->fail('Could not change permissions <code>@path</code> to @perm');
-    ->fail('Could not change permissions <code>@path</code> to @perm');
 
   // Fix file permissions so that www-data can write
   drush_log(dt("CiviCRM: running fix-drupal-site-ownership.sh and permissions..."), 'ok');
