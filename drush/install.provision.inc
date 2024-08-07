@@ -60,12 +60,13 @@ function _provision_civicrm_install_civicrm($dbuser, $dbpass, $dbhost, $dbname, 
   }
 
   provision_file()->chmod(d()->site_path, 0755)
-    ->succeed($name . ' permissions of @path have been changed to @perm.')
+    ->succeed('Changed permissions of <code>@path</code> to @perm')
     ->fail('Could not change permissions <code>@path</code> to @perm');
   $command .= ' && ' . $command_enable;
   provision_exec($command);
   provision_file()->chmod(d()->site_path, 0555)
-    ->succeed($name . ' permissions of @path have been changed to @perm.')
+    ->succeed('Changed permissions of <code>@path</code> to @perm')
+    ->fail('Could not change permissions <code>@path</code> to @perm');
     ->fail('Could not change permissions <code>@path</code> to @perm');
 
   // Fix file permissions so that www-data can write

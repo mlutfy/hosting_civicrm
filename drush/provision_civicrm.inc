@@ -199,10 +199,10 @@ function _provision_civicrm_regenerate_settings($url = NULL) {
 
   // Relax permissions while we update the file
   provision_file()->chmod(d()->site_path, 0755)
-    ->succeed($name . ' permissions of @path have been changed to @perm.')
+    ->succeed('Changed permissions of <code>@path</code> to @perm')
     ->fail('Could not change permissions <code>@path</code> to @perm');
   provision_file()->chmod($filename, 0640)
-    ->succeed($name . ' permissions of @path have been changed to @perm.')
+    ->succeed('Changed permissions of <code>@path</code> to @perm')
     ->fail('Could not change permissions <code>@path</code> to @perm');
 
   if ($settings) {
@@ -259,10 +259,10 @@ function _provision_civicrm_regenerate_settings($url = NULL) {
 
   // Set permissions back to strict
   provision_file()->chmod($filename, 0440)
-    ->succeed($name . ' permissions of @path have been changed to @perm.')
+    ->succeed('Changed permissions of <code>@path</code> to @perm')
     ->fail('Could not change permissions <code>@path</code> to @perm');
   provision_file()->chmod(d()->site_path, 0555)
-    ->succeed($name . ' permissions of @path have been changed to @perm.')
+    ->succeed('Changed permissions of <code>@path</code> to @perm')
     ->fail('Could not change permissions <code>@path</code> to @perm');
 
   drush_log(dt("CiviCRM: Generated config civicrm.settings.php file"), 'ok');
