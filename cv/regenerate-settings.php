@@ -1,71 +1,34 @@
 <?php
 
-// This should be invoked with: cv php:script cv/regenerate-settings.php [host]
-// if a [host] is passed, then the site key and creds are rotated (ex: for site cloning)
+// This should be invoked with: php cv/regenerate-settings.php [host] [regen-keys]
+// (previously was run using 'cv' but that did not work well for migrate/clone/restore)
 // host format must include https://
+//
+// if a bool value to [regen-keys] is passed, then the site key and creds are rotated (ex: for site cloning)
+// @todo This is not really implemented at the moment in hosting_civicrm (in the parent functions)
 //
 // This script assumes that you have a somewhat working CiviCRM installation
 // It might fix some settings, but the main objective is to regenerate the settings
 // file using the latest CiviCRM settings template.
 
-$host = $argv[1] ?? CIVICRM_UF_BASEURL;
-$regen_keys = !empty($argv[1]);
+eval(`cv php:boot --level=classloader`);
 
-function is_constant($token) {
-  return $token == T_CONSTANT_ENCAPSED_STRING || $token == T_STRING ||
-    $token == T_LNUMBER || $token == T_DNUMBER;
-}
-function strip($value) {
-  return preg_replace('!^([\'"])(.*)\1$!', '$2', $value);
-}
+// FIXME
+$GLOBALS['civicrm_root'] = '/var/aegir/platforms/chabadsuite/sites/all/modules/civicrm';
+$settingsPath = 'civicrm.settings.php';
 
-// We are running inside cv, so all CiviCRM vars are available
-$corePath = $GLOBALS['civicrm_root'];
-
-// Grab Drush relevant variables
-require_once getcwd() . '/drushrc.php';
-
-// Ensure that https URLs are generated, especially on WordPress
-$_SERVER['HTTPS'] = 'on';
-
-\Civi\Setup::assertProtocolCompatibility(1.0);
-\Civi\Setup::init([
-  // This is just enough information to get going. *.civi-setup.php does more scanning.
-  'cms' => CIVICRM_UF,
-  // This should not be necessary but otherwise we get very weird results
-  // such as: http://crm.example.org/usr/local/bin/usr/local/bin/aegir
-  // c.f. civicrm-core/setup/plugins/init/Drupal8.civi-setup.php
-  'cmsBaseUrl' => $host,
-  'srcPath' => $corePath,
-]);
-
-if (empty($_SERVER['db_user']) || empty($_SERVER['db_passwd'])) {
-  throw new Exception("Missing database credentials such as db_user or db_passwd.");
+if (!file_exists($settingsPath)) {
+  if (file_exists('wp-content/uploads/civicrm/civicrm.settings.php')) {
+    $settingsPath = 'wp-content/uploads/civicrm/civicrm.settings.php';
+  }
 }
 
-// init() made the initial guess. Now we can overwrite with user-supplied data.
-$setup = \Civi\Setup::instance();
-$model = $setup->getModel();
-$model->db = [
-  'server' => $_SERVER['db_host'],
-  'username' => $_SERVER['db_user'],
-  'password' => $_SERVER['db_passwd'],
-  'database' => $_SERVER['db_name'],
-  'dbSSL' => '', // Need to set if relevant later
-  'CMSdbSSL' => '', // Need to set if relevant later
-];
-// if ($lang) {
-//  $model->lang = $lang;
-//}
-
-/**
- * @var \Civi\Setup\Model $model
- */
-$model = $setup->getModel();
+$host = $argv[1];
+$regen_keys = !empty($argv[2]);
 
 // Is there an existing civicrm.settings.php file? If so use existing values
-if (file_exists($model->settingsPath)) {
-  $settingsOld = file_get_contents($model->settingsPath, true);
+if (file_exists($settingsPath)) {
+  $settingsOld = file_get_contents($settingsPath, true);
   if ($settingsOld !== false) {
     // Using token_get_all ref: https://stackoverflow.com/questions/645862/regex-to-parse-define-contents-possible
     $value = $key = '';
@@ -98,21 +61,96 @@ if (file_exists($model->settingsPath)) {
         }
       }
       $token = next($tokens);
-
     }
   }
-
-  // Define imported values
-  if (!$regen_keys) {
-    $model->credKeys = [$defines['_CIVICRM_CRED_KEYS'] ?? $defines['CIVICRM_CRED_KEYS']];
-    $model->deployID = $defines['_CIVICRM_DEPLOY_ID'] ?? $defines['CIVICRM_DEPLOY_ID'];
-    $model->siteKey = $defines['CIVICRM_SITE_KEY'];
-    $model->signKeys = [$defines['_CIVICRM_SIGN_KEYS'] ?? $defines['CIVICRM_SIGN_KEYS']];
-  }
-  $model->cms = $defines['CIVICRM_UF'];
-  $model->cmsBaseUrl = $host;
-  $model->templateCompilePath = \Civi::paths()->getPath('[civicrm.private]/templates_c');
 }
+
+function is_constant($token) {
+  return $token == T_CONSTANT_ENCAPSED_STRING || $token == T_STRING ||
+    $token == T_LNUMBER || $token == T_DNUMBER;
+}
+function strip($value) {
+  return preg_replace('!^([\'"])(.*)\1$!', '$2', $value);
+}
+
+// We are running inside cv, so all CiviCRM vars are available
+$corePath = $GLOBALS['civicrm_root'];
+
+// Grab Drush relevant variables
+require_once getcwd() . '/drushrc.php';
+
+// Ensure that https URLs are generated, especially on WordPress
+$_SERVER['HTTPS'] = 'on';
+
+\Civi\Setup::assertProtocolCompatibility(1.0);
+\Civi\Setup::init([
+  // This is just enough information to get going. *.civi-setup.php does more scanning.
+  'cms' => $defines['CIVICRM_UF'],
+  // This should not be necessary but otherwise we get very weird results
+  // such as: http://crm.example.org/usr/local/bin/usr/local/bin/aegir
+  // c.f. civicrm-core/setup/plugins/init/Drupal8.civi-setup.php
+  'cmsBaseUrl' => $host,
+  'srcPath' => $corePath,
+]);
+
+if (empty($_SERVER['db_user']) || empty($_SERVER['db_passwd'])) {
+  throw new Exception("Missing database credentials such as db_user or db_passwd.");
+}
+
+// init() made the initial guess. Now we can overwrite with user-supplied data.
+$setup = \Civi\Setup::instance();
+/**
+ * @var \Civi\Setup\Model $model
+ */
+$model = $setup->getModel();
+$model->cmsDb = [
+  'server' => $_SERVER['db_host'] . ':' . $_SERVER['db_port'],
+  'username' => $_SERVER['db_user'],
+  'password' => $_SERVER['db_passwd'],
+  'database' => $_SERVER['db_name'],
+  'dbSSL' => '', // Need to set if relevant later
+  'CMSdbSSL' => '', // Need to set if relevant later
+];
+$model->db = [
+  'server' => $_SERVER['db_host'] . ':' . $_SERVER['db_port'],
+  'username' => $_SERVER['db_user'],
+  'password' => $_SERVER['db_passwd'],
+  'database' => $_SERVER['db_name'],
+  'dbSSL' => '', // Need to set if relevant later
+  'CMSdbSSL' => '', // Need to set if relevant later
+];
+// if ($lang) {
+//  $model->lang = $lang;
+//}
+
+// Define imported values
+if (!$regen_keys) {
+  $model->credKeys = [$defines['_CIVICRM_CRED_KEYS'] ?? $defines['CIVICRM_CRED_KEYS']];
+  $model->deployID = $defines['_CIVICRM_DEPLOY_ID'] ?? $defines['CIVICRM_DEPLOY_ID'];
+  $model->siteKey = $defines['CIVICRM_SITE_KEY'];
+  $model->signKeys = [$defines['_CIVICRM_SIGN_KEYS'] ?? $defines['CIVICRM_SIGN_KEYS']];
+}
+$model->cms = $defines['CIVICRM_UF'];
+$model->cmsBaseUrl = $host;
+
+if ($model->cms == 'Drupal' || $model->cms == 'Drupal8') {
+  $model->templateCompilePath = getcwd() . '/private/files/civicrm/templates_c';
+}
+elseif ($model->cms == 'WordPress') {
+  $model->templateCompilePath = getcwd() . '/wp-content/uploads/civicrm/templates_c';
+}
+else {
+  throw new Exception('Unknown CMS (' . $model->cms . ') - cannot set templates_c');
+}
+
+// This might not always be necessary, but it was done before for Drupal7
+// without this, on d7, it will default to "private/files/civicrm"
+// ex: cv ev 'echo \Civi::paths()->getPath("[civicrm.files]/");'
+$model->paths = [
+  'civicrm.files' => [
+    'path' => getcwd() . '/files/civicrm',
+  ]
+];
 
 // Setup CiviCRM settings if not set
 if ($regen_keys) {
@@ -157,12 +195,6 @@ if ($regen_keys) {
 
 // Build params
 $params = \Civi\Setup\SettingsUtil::createParams($model);
-$parent = dirname($model->settingsPath);
-if (!file_exists($parent)) {
-  Civi\Setup::log()->info('[InstallSettingsFile.civi-setup.php] mkdir "{path}"', ['path' => $parent]);
-  mkdir($parent, 0777, TRUE);
-  \Civi\Setup\FileUtil::makeWebWriteable($parent);
-}
 
 // Regenerate TPL file and output
 $tplPath = implode(DIRECTORY_SEPARATOR,
@@ -182,7 +214,7 @@ else {
 }
 
 // On WordPress, include the drushrc.php for the WP salts
-if (CIVICRM_UF == 'WordPress') {
+if ($model->cms == 'WordPress') {
   $pos = strpos($str, '// Additional settings generated by installer:');
   if ($pos !== FALSE) {
     $str = substr($str, 0, $pos)
@@ -195,6 +227,6 @@ if (CIVICRM_UF == 'WordPress') {
 }
 
 // Output the file
-chmod($model->settingsPath, 0640);
-file_put_contents($model->settingsPath, $str);
-chmod($model->settingsPath, 0440);
+chmod($settingsPath, 0640);
+file_put_contents($settingsPath, $str);
+chmod($settingsPath, 0440);

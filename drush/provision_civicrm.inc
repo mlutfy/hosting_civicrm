@@ -255,7 +255,7 @@ function _provision_civicrm_regenerate_settings($url = NULL) {
   }
 
   // @todo FIXME pass the civicrm_sitekey if set in the frontend
-  _provision_civicrm_run_cv_command('php:script ' . dirname(__DIR__) . '/cv/regenerate-settings.php ' . escapeshellarg($url));
+  provision_exec('cd ' . escapeshellarg(d()->site_path) . ' && php ' . dirname(__DIR__) . '/cv/regenerate-settings.php ' . escapeshellarg($url));
 
   // Set permissions back to strict
   provision_file()->chmod($filename, 0440)

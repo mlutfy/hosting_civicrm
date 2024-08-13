@@ -44,7 +44,8 @@ function drush_provision_civicrm_provision_verify($url = NULL) {
 
   // This needs to be done before we initialize CiviCRM,
   // otherwise we will load with an old include path (civicrm_root).
-  _provision_civicrm_regenerate_settings();
+  $protocol = (d()->ssl_enabled || d()->https_enabled) ? 'https' : 'http';
+  _provision_civicrm_regenerate_settings($protocol . '://' . d()->uri);
 
   // Enabling the upgrade mode (if necessary) will avoid pesky issues
   // during the Drupal upgrade.
