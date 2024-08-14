@@ -1,29 +1,57 @@
-Hosting CiviCRM
-===============
+# Hosting CiviCRM - Coop Symbiotic fork
 
-This module provides tools to manage CiviCRM [1] in the Aegir Hosting System
-[2]. In other words, it will handle the installation of CiviCRM, generate the
-civicrm.settings.php file, handle upgrades, manage the CiviCRM crons and the
-CiviCRM API site key, and so on.
+This module provides tools to manage [CiviCRM](https://civicrm.org) in the
+[Aegir Hosting System](https://www.aegirproject.org/). In other words, it will
+handle the installation of CiviCRM, generate the civicrm.settings.php file,
+handle upgrades, manage the CiviCRM crons and the CiviCRM API site key, and so on.
 
-[1] https://civicrm.org
-[2] http://www.aegirproject.org/
+To get the latest version of `hosting_civicrm` or to submit a patch (pull
+request), please see the project on Github:  
+https://github.com/mlutfy/hosting_civicrm
 
-To get the latest version of `hosting_civicrm` or to submit a patch (merge
-request), please see the project on Gitlab:  
-https://gitlab.com/aegir/hosting_civicrm
+- Supports CiviCRM 5.0 or later
+- Supports Drupal 7 to Drupal 10, WordPress and partial CiviCRM Standalone support
 
-Requirements
-============
+# This is a Coop Symbiotic fork
 
-- Required: Aegir >= 3.x
-- Recommended: CiviCRM >= 5.0 (older versions might work but require a patch, see [14]).
-- Supports Drupal 6 to Drupal 9
+In August 2024, we forked this module in order to make some more drastic changes.
+Coop Symbiotic's hosting does a few non-Aegir-standard things when managing sites.
+For example, site crons are configured using SystemD timers/services. We also increasingly
+rely on Ansible to configure sites. We support Drupal7, Drupal10+, WordPress and Standalone,
+and want a consistent solution.
 
-[14] https://github.com/mlutfy/hosting_civicrm/wiki/CiviCRM-version-support
+In 2024, in order to support Drupal 10+ (which requires a newer drush), we
+started making some major changes in the `provision` module. Instead of
+"bootstrapping" the CMS, our provision fork uses the command line using drush
+or cv or wp-cli to setup sites. This broke a lot of things initially, but
+ultimately resulted in a simpler model (h/t to work by Jon Pugh who saw the
+necessity for this a long time ago, and Omega8 for their early D9/D10 work).
 
-Installation
-============
+Ultimately our goal is to have as little Aegir code as possible, so that when
+we move off Drupal 7, it will not be too complicated. We do not currently
+have a roadmap for that. Besides stabilising our forks, our priorities
+are to add full CiviCRM Standalone support, and to remove `hosting_https`.
+
+Everything we do is Free Software, and we commit to always do so, but we cannot
+garantee it will work for you. You can hire us if you need a hand or would like
+to sponsor some improvements. We specialise in Drupal, WordPress and CiviCRM
+hosting (and everything that goes with it, such as monitoring and backups).
+
+Here are the main non-standard Aegir repos that we use:
+
+- `provision`: https://github.com/mlutfy/provision/ (fork for Drupal 10+ support and more)
+- `provision_symbiotic`: https://github.com/coopsymbiotic/provision_symbiotic (mostly Symbiotic-specific tweaks)
+- `hosting_civicrm`: https://github.com/mlutfy/hosting_civicrm (this repo)
+- `hosting_civicrm_ansible`: https://github.com/coopsymbiotic/hosting_civicrm_ansible (wrapper for calling Ansible)
+- Our Ansible roles: https://github.com/coopsymbiotic/coopsymbiotic-ansible/
+
+## Requirements
+
+- PHP 7.3 or later (and tested up to PHP 8.2)
+- Aegir 3.x
+- Provision fork by Symbiotic: https://github.com/mlutfy/provision/ ('symbiotic' branch)
+
+## Installation
 
 As of version 3.2, this module has been included in the Aegir distribution, as
 part of the "Golden contrib" initiative. As such, it is automatically available
@@ -35,55 +63,17 @@ to be enabled without the need to deploy any code.
 
 When new sites are created in the platform, provision_civicrm will detect that CiviCRM is available and will automatically install it.
 
-For convenience, a "drush make" makefile is available in drush/civicrm.make.yml which can be used to generate a platform for you.
+## Support
 
-Debugging
-=========
+Please use the issue queue for support:  
+https://github.com/mlutfy/hosting_civicrm/issues
 
-If you are having problems running the crons, try:
+Please note that we provide very limited community support on Github.
 
-  drush '@hostmaster' hosting-civicrm_cron --items=5 --debug --strict=0
+For paid support or to sponsor development:  
+https://www.symbiotic.coop/en/contact
 
-
-Support
-=======
-
-Please use the issue queue for support:
-
-* https://drupal.org/project/issues/hosting_civicrm
-
-You can also ask questions in either the #aegir or #civicrm IRC channel on
-irc.freenode.org, but keep in mind that most active people in those channels do
-not necessarely use this module. You can try to ping the module maintaners,
-'bgm' or 'ergonlogic'.
-
-Commercial hosting, support and development is also possible:
-
-* Praxis Labs Coop <http://praxis.coop/> (hosting, support, dev)
-* Coop SymbioTIC <https://www.symbiotic.coop> (dev)
-* Ergon Logic Enterprises <https://www.symbiotic.coop> (dev, support)
-* Omega8.cc <https://omega8.cc/> (hosting)
-* Civi-go <http://civigo.net/> (hosting, dev via Ixiam.com)
-* Koumbit <http://www.koumbit.org> (hosting)
-* Progressive Technology Project <http://www.progressivetech.org/> (hosting)
-
-Other Aegir service providers:
-
-* http://community.aegirproject.org/service-providers
-
-If you appreciate this module, please consider donating to either CiviCRM
-or the Aegir project.
-
-* https://civicrm.org/participate/support-civicrm
-* http://aegirproject.org/donate
-
-You can also send the lead module maintainer a beer:
-
-* https://www.bidon.ca/en/paypal
-
-
-Patches and testing
-===================
+## Patches and testing
 
 You can send a patch attached to an issue on drupal.org [11] or send a
 pull-request on Github [12].
@@ -96,8 +86,7 @@ automatically [13] against most CiviCRM versions that are supported.
 [13] https://github.com/mlutfy/hosting_civicrm/wiki/Continuous-integration
 
 
-Credits
-=======
+## Credits
 
 Initial development was by Mathieu Petit-Clair [3] during the CiviCRM code
 sprint in San Francisco of spring 2010, with the help of Deepak Srivastava [4]
@@ -120,12 +109,12 @@ Thanks to Koumbit, Praxis, Ixiam, PTP, JMA consulting and NDI for financially
 supporting the development of this module.
 
 
-License
-=======
+## License
 
-(C) 2012-2022 Mathieu Lutfy <mathieu@bidon.ca>
-(C) 2012-2022 Coop SymbioTIC <info@symbiotic.coop>
-(C) 2012-2015 Christopher Gervais <https://www.drupal.org/u/ergonlogic>
+(C) 2012-2024 Mathieu Lu <mathieu@bidon.ca>  
+(C) 2012-2024 Coop SymbioTIC <info@symbiotic.coop>  
+(C) 2012-2015 Christopher Gervais <https://www.drupal.org/u/ergonlogic>  
+(C) 2010-2012 Mathieu Petit-Clair
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as
