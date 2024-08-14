@@ -52,7 +52,12 @@ function drush_provision_civicrm_post_provision_deploy() {
   // upgrade from drupal6 to drupal7. We need to bootstrap in order to
   // delete the civicrm_class_loader variable.
   global $conf;
-  $conf['blocked_ips'] = array();
+  $conf['blocked_ips'] = [];
+
+  if (provision_get_drupal_core_major_version() >= 10) {
+    drush_log("CiviCRM: Not running drush_civicrm_post_provision_deploy() on Drupal10 - not yet implemented. Mostly code to fix Mosaico Templates if the URL/paths changed.", 'warning');
+    return;
+  }
 
   // Full bootstrap is required so that we can use CiviCRM functions
   if (!drush_bootstrap(DRUSH_BOOTSTRAP_DRUPAL_FULL)) {

@@ -45,32 +45,28 @@ function drush_provision_civicrm_post_provision_install($url = null) {
 function _provision_civicrm_install_civicrm($dbuser, $dbpass, $dbhost, $dbname, $lang) {
   // As of D8, the database schema and civicrm.settings.php
   // are generated when the module is first installed.
-  $drupal_core_version = drush_drupal_major_version();
-
-  // Transition code, provision might not have this function
-  if (function_exists('provision_get_drupal_core_version')) {
-    $v = provision_get_drupal_core_version();
-    if ($v) {
-      $drupal_core_version = $v;
-    }
-  }
+  $drupal_core_version = provision_get_drupal_core_major_version();
 
   // Install CiviCRM using cv and then enable the module
   // @todo FIXME On Drupal10, test if we can use cv core:install as well (so that we can support the $lang)
   drush_log(dt('CiviCRM: Detected Drupal core version: %version', ['%version' => $drupal_core_version]), 'ok');
   $protocol = (d()->ssl_enabled || d()->https_enabled) ? 'https' : 'http';
   $baseUrl = $protocol . '://' . d()->uri . '/';
-  $command = 'cv core:install --cms-base-url=' . $baseUrl . ' --lang=' . escapeshellarg($lang) . ' && drush pm-enable civicrm -y';
+  $command = 'cv core:install --cms-base-url=' . $baseUrl . ' --lang=' . escapeshellarg($lang);
+  $command_enable = 'drush pm-enable civicrm -y';
 
-  if (version_compare($drupal_core_version, 10, '>=')) {
-    $command = 'drush pm:install civicrm -y';
+  if ($drupal_core_version >= 10) {
+    $command_enable = 'drush pm:install civicrm -y';
   }
 
-  drush_log(dt("CiviCRM: running: %command", ['%command' => $command]), 'ok');
-  provision_file()->chmod(d()->site_path, 0755);
-  $output = system($command, $retval);
-  drush_log(dt("CiviCRM: retval=%retval, output: %output", ['%retval' => $retval, '%output' => $output]), $retval == 0 ? 'ok' : 'error');
-  provision_file()->chmod(d()->site_path, 0555);
+  provision_file()->chmod(d()->site_path, 0755)
+    ->succeed('Changed permissions of <code>@path</code> to @perm')
+    ->fail('Could not change permissions <code>@path</code> to @perm');
+  $command .= ' && ' . $command_enable;
+  provision_exec($command);
+  provision_file()->chmod(d()->site_path, 0555)
+    ->succeed('Changed permissions of <code>@path</code> to @perm')
+    ->fail('Could not change permissions <code>@path</code> to @perm');
 
   // Fix file permissions so that www-data can write
   drush_log(dt("CiviCRM: running fix-drupal-site-ownership.sh and permissions..."), 'ok');

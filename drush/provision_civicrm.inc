@@ -108,15 +108,9 @@ function _provision_civicrm_is_site_context($load_if_missing = FALSE) {
 function _provision_civicrm_get_package_path($load_if_missing = FALSE) {
   // Issue#2942572 For D8 and D9, we only support having CiviCRM in /vendor
   // Aegir package info functions are not CiviCRM-friendly. This is simpler.
-  $drupal_core_version = drush_drupal_major_version();
+  $drupal_core_version = provision_get_drupal_core_major_version();
 
-  if (function_exists('provision_get_drupal_core_version')) {
-    if ($v = provision_get_drupal_core_version()) {
-      $drupal_core_version = $v;
-    }
-  }
-
-  if (version_compare($drupal_core_version, 8, '>=')) {
+  if (provision_get_drupal_core_major_version() >= 8) {
     $root = d()->root;
     // If Drupal lives under a 'web' subdirectory (which is usually the case with composer),
     // we remove the prefix, since the vendor directory is outside 'web'.
@@ -195,14 +189,17 @@ function _provision_civicrm_regenerate_settings($url = NULL) {
   // if we are cloning from a platform to another (duplicate ClassLoader).
   $civicrm_root = _provision_civicrm_get_package_path();
   $filename = d()->site_path . '/civicrm.settings.php';
+  if (d()->type == 'wpsite') {
+    $filename = d()->site_path . '/wp-content/uploads/civicrm/civicrm.settings.php';
+  }
   $settings = file_get_contents($filename);
 
   // Relax permissions while we update the file
   provision_file()->chmod(d()->site_path, 0755)
-    ->succeed($name . ' permissions of @path have been changed to @perm.')
+    ->succeed('Changed permissions of <code>@path</code> to @perm')
     ->fail('Could not change permissions <code>@path</code> to @perm');
   provision_file()->chmod($filename, 0640)
-    ->succeed($name . ' permissions of @path have been changed to @perm.')
+    ->succeed('Changed permissions of <code>@path</code> to @perm')
     ->fail('Could not change permissions <code>@path</code> to @perm');
 
   if ($settings) {
@@ -244,25 +241,42 @@ function _provision_civicrm_regenerate_settings($url = NULL) {
     drush_set_option($opt, $val, 'site');
   }
 
-  // Since we do not have an upgrade path for existing site key (before it
-  // was added to the frontend), be nice about an empty sitekey.
+  // Detect the CMS (used for CIVICRM_UF) based on the Aegir node type
+  $cms = 'Drupal';
+  if (d()->type == 'site' && provision_get_drupal_core_major_version() >= 8) {
+    $cms = 'Drupal8';
+  }
+  elseif (d()->type == 'wpsite') {
+    $cms = 'WordPress';
+  }
+  elseif (d()->type == 'civisite') {
+    $cms = 'Standalone';
+  }
+
+  $args = [
+    '--host=' . escapeshellarg($url),
+    '--civicrm_root=' . escapeshellarg($civicrm_root),
+    '--cms=' . $cms,
+  ];
+
+  // Settings that can be set in the Aegir frontend (todo: CredKey)
   if (d()->civicrm_sitekey) {
     drush_log('CiviCRM: found a site key from the front-end.', 'ok');
     drush_set_option('civicrm_sitekey', d()->civicrm_sitekey);
+    $args[] = '--site_key=' . escapeshellarg(d()->civicrm_sitekey);
   }
   else {
     drush_log('CiviCRM: no site key found from the front-end.');
   }
 
-  // @todo FIXME pass the civicrm_sitekey if set in the frontend
-  _provision_civicrm_run_cv_command('php:script ' . dirname(__DIR__) . '/cv/regenerate-settings.php ' . escapeshellarg($url));
+  provision_exec('cd ' . escapeshellarg(d()->site_path) . ' && php ' . dirname(__DIR__) . '/cv/regenerate-settings.php ' . implode(' ', $args));
 
   // Set permissions back to strict
   provision_file()->chmod($filename, 0440)
-    ->succeed($name . ' permissions of @path have been changed to @perm.')
+    ->succeed('Changed permissions of <code>@path</code> to @perm')
     ->fail('Could not change permissions <code>@path</code> to @perm');
   provision_file()->chmod(d()->site_path, 0555)
-    ->succeed($name . ' permissions of @path have been changed to @perm.')
+    ->succeed('Changed permissions of <code>@path</code> to @perm')
     ->fail('Could not change permissions <code>@path</code> to @perm');
 
   drush_log(dt("CiviCRM: Generated config civicrm.settings.php file"), 'ok');
@@ -367,38 +381,6 @@ function _provision_civicrm_database_version() {
 
   drush_log(dt('CiviCRM: db version is !ver', ['!ver' => $dbVer]), 'ok');
   return $dbVer;
-}
-
-/**
- * Run a command by invoking a shell instead of running it in the
- * same process as Aegir, because it makes error handling more difficult.
- *
- * You must call escapeshellarg() before calling this function, if there are any args in the $command.
- *
- * Errors are logged as warnings to avoid an Aegir rollback (because those errors
- * should not happen, and if they do, we want to be able to debug).
- */
-function _provision_civicrm_run_drush_command($command) {
-  $command = 'cd ' . escapeshellarg(d()->site_path) . ' && drush --quiet cc drush && drush --quiet @' . escapeshellarg(d()->uri) . ' ' . $command;
-  drush_log(dt("CiviCRM: running: %command", ['%command' => $command]), 'ok');
-  $json = system($command, $retval);
-  // This assumes we are always using --out=json for CiviCRM
-  $output = json_decode($json, TRUE);
-  if ($retval == 1 && $json == 'Do you really want to continue? (y/n): y') {
-    // Not seeing any error.. shrug
-    drush_log(dt("CiviCRM: command success: %output", ['%output' => $json]), 'ok');
-  }
-  elseif ($retval || (is_array($output) && !empty($output['is_error']))) {
-    drush_log(dt("CiviCRM: command failed {$retval} (the ConfigAndLog should have more details): %output", ['%output' => $json]), 'warning');
-  }
-  elseif (!preg_match('/is_error.:0/', $json)) {
-    drush_log(dt("CiviCRM: command may have failed: %output", ['%output' => $json]), 'warning');
-  }
-  else {
-    drush_log(dt("CiviCRM: command success: %output", ['%output' => $json]), 'ok');
-  }
-
-  return $json;
 }
 
 /**
