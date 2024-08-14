@@ -1,4 +1,4 @@
-# Hosting CiviCRM - Coop Symbiotic fork
+# Hosting CiviCRM
 
 This module provides tools to manage [CiviCRM](https://civicrm.org) in the
 [Aegir Hosting System](https://www.aegirproject.org/). In other words, it will
@@ -12,7 +12,7 @@ https://github.com/mlutfy/hosting_civicrm
 - Supports CiviCRM 5.0 or later
 - Supports Drupal 7 to Drupal 10, WordPress and partial CiviCRM Standalone support
 
-# This is a Coop Symbiotic fork
+## This is a Coop Symbiotic fork
 
 In August 2024, we forked this module in order to make some more drastic changes.
 Coop Symbiotic's hosting does a few non-Aegir-standard things when managing sites.
