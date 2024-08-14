@@ -108,15 +108,9 @@ function _provision_civicrm_is_site_context($load_if_missing = FALSE) {
 function _provision_civicrm_get_package_path($load_if_missing = FALSE) {
   // Issue#2942572 For D8 and D9, we only support having CiviCRM in /vendor
   // Aegir package info functions are not CiviCRM-friendly. This is simpler.
-  $drupal_core_version = drush_drupal_major_version();
+  $drupal_core_version = provision_get_drupal_core_major_version();
 
-  if (function_exists('provision_get_drupal_core_version')) {
-    if ($v = provision_get_drupal_core_version()) {
-      $drupal_core_version = $v;
-    }
-  }
-
-  if (version_compare($drupal_core_version, 8, '>=')) {
+  if (provision_get_drupal_core_major_version() >= 8) {
     $root = d()->root;
     // If Drupal lives under a 'web' subdirectory (which is usually the case with composer),
     // we remove the prefix, since the vendor directory is outside 'web'.
@@ -195,6 +189,9 @@ function _provision_civicrm_regenerate_settings($url = NULL) {
   // if we are cloning from a platform to another (duplicate ClassLoader).
   $civicrm_root = _provision_civicrm_get_package_path();
   $filename = d()->site_path . '/civicrm.settings.php';
+  if (d()->type == 'wpsite') {
+    $filename = d()->site_path . '/wp-content/uploads/civicrm/civicrm.settings.php';
+  }
   $settings = file_get_contents($filename);
 
   // Relax permissions while we update the file
@@ -244,18 +241,35 @@ function _provision_civicrm_regenerate_settings($url = NULL) {
     drush_set_option($opt, $val, 'site');
   }
 
-  // Since we do not have an upgrade path for existing site key (before it
-  // was added to the frontend), be nice about an empty sitekey.
+  // Detect the CMS (used for CIVICRM_UF) based on the Aegir node type
+  $cms = 'Drupal';
+  if (d()->type == 'site' && provision_get_drupal_core_major_version() >= 8) {
+    $cms = 'Drupal8';
+  }
+  elseif (d()->type == 'wpsite') {
+    $cms = 'WordPress';
+  }
+  elseif (d()->type == 'civisite') {
+    $cms = 'Standalone';
+  }
+
+  $args = [
+    '--host=' . escapeshellarg($url),
+    '--civicrm_root=' . escapeshellarg($civicrm_root),
+    '--cms=' . $cms,
+  ];
+
+  // Settings that can be set in the Aegir frontend (todo: CredKey)
   if (d()->civicrm_sitekey) {
     drush_log('CiviCRM: found a site key from the front-end.', 'ok');
     drush_set_option('civicrm_sitekey', d()->civicrm_sitekey);
+    $args[] = '--site_key=' . escapeshellarg(d()->civicrm_sitekey);
   }
   else {
     drush_log('CiviCRM: no site key found from the front-end.');
   }
 
-  // @todo FIXME pass the civicrm_sitekey if set in the frontend
-  provision_exec('cd ' . escapeshellarg(d()->site_path) . ' && php ' . dirname(__DIR__) . '/cv/regenerate-settings.php ' . escapeshellarg($url));
+  provision_exec('cd ' . escapeshellarg(d()->site_path) . ' && php ' . dirname(__DIR__) . '/cv/regenerate-settings.php ' . implode(' ', $args));
 
   // Set permissions back to strict
   provision_file()->chmod($filename, 0440)

@@ -1,8 +1,14 @@
 <?php
 
-// This should be invoked with: php cv/regenerate-settings.php [host] [regen-keys]
+// This should be invoked with plain PHP, example:
+// php cv/regenerate-settings.php \
+//   --host=https://example.org \
+//   --civicrm_root=/path/to/civicrm/ \
+//   --cms={Drupal,Drupal8,WordPress,Standalone} \
+//   --site_key=[...] \
+//   [--regen_keys=1]
+//
 // (previously was run using 'cv' but that did not work well for migrate/clone/restore)
-// host format must include https://
 //
 // if a bool value to [regen-keys] is passed, then the site key and creds are rotated (ex: for site cloning)
 // @todo This is not really implemented at the moment in hosting_civicrm (in the parent functions)
@@ -10,21 +16,41 @@
 // This script assumes that you have a somewhat working CiviCRM installation
 // It might fix some settings, but the main objective is to regenerate the settings
 // file using the latest CiviCRM settings template.
+// Do not rely on the stability of this script, it will likely change a bit in 2024.
 
 eval(`cv php:boot --level=classloader`);
 
-// FIXME
-$GLOBALS['civicrm_root'] = '/var/aegir/platforms/chabadsuite/sites/all/modules/civicrm';
-$settingsPath = 'civicrm.settings.php';
+// Parse command-line options
+// Based on https://stackoverflow.com/a/26520115
+$config = [
+  // Required values
+  'host' => NULL,
+  'civicrm_root' => NULL,
+  'cms' => NULL,
+  // Optional values: set defaults
+  'regen_keys' => FALSE,
+  'site_key' => FALSE,
+];
 
+for ($i = 1; $i < count($argv); $i++) {
+  if (preg_match('/^--([^=]+)=(.*)/', $argv[$i], $match)) {
+    $config[$match[1]] = $match[2];
+  }
+}
+
+// Check required values
+foreach ($config as $key => $val) {
+  if ($val === NULL) {
+    throw new Exception("$key is a required value. Ex: --$key=VAL");
+  }
+}
+
+$settingsPath = 'civicrm.settings.php';
 if (!file_exists($settingsPath)) {
   if (file_exists('wp-content/uploads/civicrm/civicrm.settings.php')) {
     $settingsPath = 'wp-content/uploads/civicrm/civicrm.settings.php';
   }
 }
-
-$host = $argv[1];
-$regen_keys = !empty($argv[2]);
 
 // Is there an existing civicrm.settings.php file? If so use existing values
 if (file_exists($settingsPath)) {
@@ -74,7 +100,7 @@ function strip($value) {
 }
 
 // We are running inside cv, so all CiviCRM vars are available
-$corePath = $GLOBALS['civicrm_root'];
+$corePath = $config['civicrm_root'];
 
 // Grab Drush relevant variables
 require_once getcwd() . '/drushrc.php';
@@ -85,11 +111,11 @@ $_SERVER['HTTPS'] = 'on';
 \Civi\Setup::assertProtocolCompatibility(1.0);
 \Civi\Setup::init([
   // This is just enough information to get going. *.civi-setup.php does more scanning.
-  'cms' => $defines['CIVICRM_UF'],
+  'cms' => $config['cms'],
   // This should not be necessary but otherwise we get very weird results
   // such as: http://crm.example.org/usr/local/bin/usr/local/bin/aegir
   // c.f. civicrm-core/setup/plugins/init/Drupal8.civi-setup.php
-  'cmsBaseUrl' => $host,
+  'cmsBaseUrl' => $config['host'],
   'srcPath' => $corePath,
 ]);
 
@@ -124,14 +150,14 @@ $model->db = [
 //}
 
 // Define imported values
-if (!$regen_keys) {
+if (!$config['regen_keys']) {
   $model->credKeys = [$defines['_CIVICRM_CRED_KEYS'] ?? $defines['CIVICRM_CRED_KEYS']];
   $model->deployID = $defines['_CIVICRM_DEPLOY_ID'] ?? $defines['CIVICRM_DEPLOY_ID'];
-  $model->siteKey = $defines['CIVICRM_SITE_KEY'];
+  $model->siteKey = $config['site_key'] ?: $defines['CIVICRM_SITE_KEY'];
   $model->signKeys = [$defines['_CIVICRM_SIGN_KEYS'] ?? $defines['CIVICRM_SIGN_KEYS']];
 }
-$model->cms = $defines['CIVICRM_UF'];
-$model->cmsBaseUrl = $host;
+$model->cms = $config['cms'];
+$model->cmsBaseUrl = $config['host'];
 
 if ($model->cms == 'Drupal' || $model->cms == 'Drupal8') {
   $model->templateCompilePath = getcwd() . '/private/files/civicrm/templates_c';
@@ -153,7 +179,7 @@ $model->paths = [
 ];
 
 // Setup CiviCRM settings if not set
-if ($regen_keys) {
+if ($config['regen_keys']) {
   // Generate all the relevant variables
   $toAlphanum = function($bits) {
     return preg_replace(';[^a-zA-Z0-9];', '', base64_encode($bits));
