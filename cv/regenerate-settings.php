@@ -18,8 +18,6 @@
 // file using the latest CiviCRM settings template.
 // Do not rely on the stability of this script, it will likely change a bit in 2024.
 
-eval(`cv php:boot --level=classloader`);
-
 // Parse command-line options
 // Based on https://stackoverflow.com/a/26520115
 $config = [
@@ -30,6 +28,7 @@ $config = [
   // Optional values: set defaults
   'regen_keys' => FALSE,
   'site_key' => FALSE,
+  'templates_c' => FALSE,
 ];
 
 for ($i = 1; $i < count($argv); $i++) {
@@ -52,11 +51,22 @@ if (!file_exists($settingsPath)) {
   }
 }
 
-// Is there an existing civicrm.settings.php file? If so use existing values
+if (in_array($config['cms'], ['Drupal', 'Drupal8'])) {
+  $config['templates_c'] = getcwd() . '/private/files/civicrm/templates_c';
+}
+elseif ($model->cms == 'WordPress') {
+  $config['templates_c'] = getcwd() . '/wp-content/uploads/civicrm/templates_c';
+}
+else {
+  throw new Exception('Unknown CMS (' . $config['cms'] . ') - cannot set templates_c');
+}
+
+// Is there an existing civicrm.settings.php file?
 if (file_exists($settingsPath)) {
   $settingsOld = file_get_contents($settingsPath, true);
   if ($settingsOld !== false) {
-    // Using token_get_all ref: https://stackoverflow.com/questions/645862/regex-to-parse-define-contents-possible
+    // Extract existing constants, such as CIVICRM_CRED_KEYS etc into a $defines array
+    // Based on: https://stackoverflow.com/q/645862
     $value = $key = '';
     $state = 0;
     $defines = [];
@@ -88,6 +98,39 @@ if (file_exists($settingsPath)) {
       }
       $token = next($tokens);
     }
+
+    // We have to manually update the $civicrm_root in the civicrm.settings.php
+    // file, because using cv assumes a functionnal CiviCRM, which will not work
+    // if we are cloning from a platform to another (duplicate ClassLoader).
+    $replacements = [];
+    $replacements[] = [
+      'search_regex' => '/^.*?\$civicrm_root =.*\n?/m',
+      'replace_line' => "\$civicrm_root = '{$config['civicrm_root']}';\n",
+    ];
+    // This is not great because we assume [civicrm.private] points here
+    // but .. it should?
+    $replacements[] = [
+      'search_regex' => "#'CIVICRM_TEMPLATE_COMPILEDIR', '/var/aegir/platforms/[^/]+/(web/)?sites/[^/]+/(private/)?files/civicrm/templates_c'#",
+      'replace_line' => "'CIVICRM_TEMPLATE_COMPILEDIR', '{$config['templates_c']}'",
+    ];
+
+    foreach ($replacements as $desc => $line) {
+      // Throw a warning if any of our replacements cannot be found.
+      if (!preg_match($line['search_regex'], $settingsOld)) {
+        echo "[warning] cv/regenerate-settings.php: Failed to replace: {$line['search_regex']}\n";
+      }
+      else {
+        $count = 0;
+        $settingsOld = preg_replace($line['search_regex'], $line['replace_line'], $settingsOld, -1, $count);
+        if ($count > 0) {
+          echo "[success] cv/regenerate-settings.php: Succeeded to replace: {$line['search_regex']}\n";
+        }
+      }
+    }
+
+    chmod($settingsPath, 0640);
+    file_put_contents($settingsPath, $settingsOld);
+    chmod($settingsPath, 0440);
   }
 }
 
@@ -107,6 +150,16 @@ require_once getcwd() . '/drushrc.php';
 
 // Ensure that https URLs are generated, especially on WordPress
 $_SERVER['HTTPS'] = 'on';
+
+// Civi\Setup fails because of bootstrap issues on Drupal9+
+// but for now, leaving the others on level=classloader because it is
+// less likely to crash if some values are incorrectly set
+if ($config['cms'] == 'Drupal8') {
+  eval(`cv php:boot --level=cms-full`);
+}
+else {
+  eval(`cv php:boot --level=classloader`);
+}
 
 \Civi\Setup::assertProtocolCompatibility(1.0);
 \Civi\Setup::init([
@@ -158,16 +211,7 @@ if (!$config['regen_keys']) {
 }
 $model->cms = $config['cms'];
 $model->cmsBaseUrl = $config['host'];
-
-if ($model->cms == 'Drupal' || $model->cms == 'Drupal8') {
-  $model->templateCompilePath = getcwd() . '/private/files/civicrm/templates_c';
-}
-elseif ($model->cms == 'WordPress') {
-  $model->templateCompilePath = getcwd() . '/wp-content/uploads/civicrm/templates_c';
-}
-else {
-  throw new Exception('Unknown CMS (' . $model->cms . ') - cannot set templates_c');
-}
+$model->templateCompilePath = $config['templates_c'];
 
 // This might not always be necessary, but it was done before for Drupal7
 // without this, on d7, it will default to "private/files/civicrm"

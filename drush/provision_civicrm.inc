@@ -183,57 +183,12 @@ function _provision_civicrm_get_package_info() {
  */
 function _provision_civicrm_regenerate_settings($url = NULL) {
   drush_log(dt("CiviCRM: starting provision_civicrm_regenerate_settings()."));
-
-  // We have to manually update the $civicrm_root in the civicrm.settings.php
-  // file, because using cv assumes a functionnal CiviCRM, which will not work
-  // if we are cloning from a platform to another (duplicate ClassLoader).
   $civicrm_root = _provision_civicrm_get_package_path();
-  $filename = d()->site_path . '/civicrm.settings.php';
-  if (d()->type == 'wpsite') {
-    $filename = d()->site_path . '/wp-content/uploads/civicrm/civicrm.settings.php';
-  }
-  $settings = file_get_contents($filename);
 
   // Relax permissions while we update the file
   provision_file()->chmod(d()->site_path, 0755)
     ->succeed('Changed permissions of <code>@path</code> to @perm')
     ->fail('Could not change permissions <code>@path</code> to @perm');
-  provision_file()->chmod($filename, 0640)
-    ->succeed('Changed permissions of <code>@path</code> to @perm')
-    ->fail('Could not change permissions <code>@path</code> to @perm');
-
-  if ($settings) {
-    $replacements = [];
-    $replacements[] = [
-      'search_regex' => '/^.*?\$civicrm_root =.*\n?/m',
-      'replace_line' => "\$civicrm_root = '$civicrm_root';\n",
-    ];
-    // This is not great because we assume [civicrm.private] points here
-    // but .. it should?
-    $replacements[] = [
-      'search_regex' => "#'CIVICRM_TEMPLATE_COMPILEDIR', '/var/aegir/platforms/[^/]+/(web/)?sites/[^/]+/(private/)?files/civicrm/templates_c'#",
-      'replace_line' => "'CIVICRM_TEMPLATE_COMPILEDIR', '" . d()->site_path . "/private/files/civicrm/templates_c'",
-    ];
-
-    foreach ($replacements as $desc => $line) {
-      // Throw a warning if any of our replacements cannot be found.
-      if (!preg_match($line['search_regex'], $settings)) {
-        drush_log('drush_provision_civicrm_provision_deploy: Failed to replace: '. $line['search_regex'], 'warning');
-      }
-      else {
-        $count = 0;
-        $settings = preg_replace($line['search_regex'], $line['replace_line'], $settings, -1, $count);
-        if ($count > 0) {
-          drush_log('drush_provision_civicrm_provision_deploy: Succeeded to replace: ' . $line['search_regex'], 'success');
-        }
-      }
-    }
-
-    file_put_contents($filename, $settings);
-  }
-  else {
-    drush_log(dt("drush_provision_civicrm_provision_deploy: Failed to read the civicrm.settings.php file (%file). The civicrm_root value will not be updated, and cloning from one platform to another will fail.", ['%file' => $filename]), 'error');
-  }
 
   // Make sure to write the civicrm options
   $civi_opts = _provision_civicrm_drush_options('post verify');
@@ -272,9 +227,6 @@ function _provision_civicrm_regenerate_settings($url = NULL) {
   provision_exec('cd ' . escapeshellarg(d()->site_path) . ' && php ' . dirname(__DIR__) . '/cv/regenerate-settings.php ' . implode(' ', $args));
 
   // Set permissions back to strict
-  provision_file()->chmod($filename, 0440)
-    ->succeed('Changed permissions of <code>@path</code> to @perm')
-    ->fail('Could not change permissions <code>@path</code> to @perm');
   provision_file()->chmod(d()->site_path, 0555)
     ->succeed('Changed permissions of <code>@path</code> to @perm')
     ->fail('Could not change permissions <code>@path</code> to @perm');
