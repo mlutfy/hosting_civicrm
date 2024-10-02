@@ -54,6 +54,7 @@ if (!file_exists($settingsPath)) {
   }
 }
 
+// Guess the templates_c path
 if (in_array($config['cms'], ['Drupal', 'Drupal8'])) {
   $config['templates_c'] = getcwd() . '/private/files/civicrm/templates_c';
 }
@@ -212,7 +213,8 @@ $extraSettings = [
 ];
 
 if (in_array($config['cms'], ['Drupal', 'Drupal8'])) {
-  $extraSettings[] = '$civicrm_paths[\'civicrm.files\'][\'url\'] = \'' . $config['host'] . '/sites/' . $config['host'] . '/files/civicrm\';';
+  $urlParts = parse_url($config['host']);
+  $extraSettings[] = '$civicrm_paths[\'civicrm.files\'][\'url\'] = \'' . $config['host'] . '/sites/' . $urlParts['host'] . '/files/civicrm\';';
   $extraSettings[] = '$civicrm_paths[\'civicrm.files\'][\'path\'] = \'' . getcwd() . '/files/civicrm\';';
   $extraSettings[] = '$civicrm_paths[\'civicrm.private\'][\'path\'] = \'' . getcwd() . '/private/files/civicrm\';';
 }
