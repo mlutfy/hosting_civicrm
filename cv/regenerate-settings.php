@@ -229,6 +229,10 @@ if ($config['cms'] == 'WordPress') {
   $extraSettings[] = '@include_once(\'' . getcwd() . '/drushrc.php\');';
 }
 
+// Include the global.inc
+$extraSettings[] = '// Include the global.inc so that cv always reads it';
+$extraSettings[] = "@include_once('/var/aegir/config/includes/global.inc');";
+
 $tokens['extraSettings'] = implode("\n", $extraSettings);
 
 // Interpolate tokens
