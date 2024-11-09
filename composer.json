@@ -1,13 +1,5 @@
 {
-  "require-dev": {
-    "drush/drush": "^8.0"
-  },
-  "autoload-dev": {
-    "psr-0": {
-      "HostingCiviTest": "tests/"
-    }
-  },
-  "require": {
-    "symfony/process": "^3.1"
-  }
+    "name": "mlutfy/hosting_civicrm",
+    "type": "drupal-module",
+    "description": "Host CiviCRM with Aegir"
 }
