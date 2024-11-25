@@ -119,10 +119,18 @@ if (file_exists($settingsPath)) {
     ];
     // This is not great because we assume [civicrm.private] points here
     // but .. it should?
-    $replacements[] = [
-      'search_regex' => "#'CIVICRM_TEMPLATE_COMPILEDIR', '/var/aegir/platforms/[^/]+/(web/)?sites/[^/]+/(private/)?files/civicrm/templates_c'#",
-      'replace_line' => "'CIVICRM_TEMPLATE_COMPILEDIR', '{$config['templates_c']}'",
-    ];
+    if ($config['cms'] == 'WordPress') {
+      $replacements[] = [
+        'search_regex' => "#'CIVICRM_TEMPLATE_COMPILEDIR', '/var/aegir/platforms/[^/]+/(web/)?sites/[^/]+/wp-content/uploads/civicrm/templates_c'#",
+        'replace_line' => "'CIVICRM_TEMPLATE_COMPILEDIR', '{$config['templates_c']}'",
+      ];
+    }
+    else {
+      $replacements[] = [
+        'search_regex' => "#'CIVICRM_TEMPLATE_COMPILEDIR', '/var/aegir/platforms/[^/]+/(web/)?sites/[^/]+/(private/)?files/civicrm/templates_c'#",
+        'replace_line' => "'CIVICRM_TEMPLATE_COMPILEDIR', '{$config['templates_c']}'",
+      ];
+    }
 
     foreach ($replacements as $desc => $line) {
       // Throw a warning if any of our replacements cannot be found.
