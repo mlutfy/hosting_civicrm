@@ -126,10 +126,19 @@ if (file_exists($settingsPath)) {
       ];
     }
     else {
-      $replacements[] = [
-        'search_regex' => "#'CIVICRM_TEMPLATE_COMPILEDIR', '/var/aegir/platforms/[^/]+/(web/)?sites/[^/]+/(private/)?files/civicrm/templates_c'#",
-        'replace_line' => "'CIVICRM_TEMPLATE_COMPILEDIR', '{$config['templates_c']}'",
-      ];
+      // Check for structures such as CiviGo who use ex: /var/aegir/platforms/civigo_xx/civigo_yy/web/[...]
+      if (preg_match('#/var/aegir/platforms/[^/]+/[^/]+/web#', $config['templates_c'])) {
+        $replacements[] = [
+          'search_regex' => "#'CIVICRM_TEMPLATE_COMPILEDIR', '/var/aegir/platforms/[^/]+/[^/]+/(web/)?sites/[^/]+/(private/)?files/civicrm/templates_c'#",
+          'replace_line' => "'CIVICRM_TEMPLATE_COMPILEDIR', '{$config['templates_c']}'",
+        ];
+      }
+      else {
+        $replacements[] = [
+          'search_regex' => "#'CIVICRM_TEMPLATE_COMPILEDIR', '/var/aegir/platforms/[^/]+/(web/)?sites/[^/]+/(private/)?files/civicrm/templates_c'#",
+          'replace_line' => "'CIVICRM_TEMPLATE_COMPILEDIR', '{$config['templates_c']}'",
+        ];
+      }
     }
 
     foreach ($replacements as $desc => $line) {
