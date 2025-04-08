@@ -67,6 +67,9 @@ function _provision_civicrm_drush_options($op = 'unknown') {
     'civicrm_cron_username' => '',
     'civicrm_cron_password' => '',
     'civicrm_sitekey' => '',
+    'civicrm_ansible_sitekey' => '',
+    'civicrm_ansible_credkey' => '',
+    'civicrm_ansible_signkey' => '',
   );
 
   foreach ($civi_opts as $opt => $val) {
@@ -214,14 +217,29 @@ function _provision_civicrm_regenerate_settings($url = NULL) {
     '--cms=' . $cms,
   ];
 
-  // Settings that can be set in the Aegir frontend (todo: CredKey)
+  // Settings that can be set in the Aegir frontend
   if (d()->civicrm_sitekey) {
+    drush_log('CiviCRM: found a site key from the front-end.', 'ok');
+    drush_set_option('civicrm_sitekey', d()->civicrm_sitekey);
+    $args[] = '--site_key=' . escapeshellarg(d()->civicrm_sitekey);
+  }
+  elseif (d()->civicrm_ansible_sitekey) {
     drush_log('CiviCRM: found a site key from the front-end.', 'ok');
     drush_set_option('civicrm_sitekey', d()->civicrm_sitekey);
     $args[] = '--site_key=' . escapeshellarg(d()->civicrm_sitekey);
   }
   else {
     drush_log('CiviCRM: no site key found from the front-end.');
+  }
+
+  if (d()->civicrm_ansible_credkey) {
+    drush_log('CiviCRM: found civicrm_ansible_credkey from the front-end.', 'ok');
+    $args[] = '--cred_keys=' . escapeshellarg(d()->civicrm_ansible_credkey);
+  }
+
+  if (d()->civicrm_ansible_signkey) {
+    drush_log('CiviCRM: found civicrm_ansible_signkey from the front-end.', 'ok');
+    $args[] = '--sign_keys=' . escapeshellarg(d()->civicrm_ansible_signkey);
   }
 
   provision_exec('cd ' . escapeshellarg(d()->site_path) . ' && php ' . dirname(__DIR__) . '/cv/regenerate-settings.php ' . implode(' ', $args));

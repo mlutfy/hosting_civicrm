@@ -11,12 +11,11 @@ function hosting_civicrm_hosting_site_context_options(&$task) {
     $task->context_options['civicrm_version'] = 'null';
   }
 
-  if (isset($task->ref->civicrm_sitekey) && !empty($task->ref->civicrm_sitekey)) {
-    $task->context_options['civicrm_sitekey'] = $task->ref->civicrm_sitekey;
-  }
-  else {
-    $task->context_options['civicrm_sitekey'] = '';
-  }
+  $task->context_options['civicrm_ansible_sitekey'] = $task->ref->civicrm_ansible_sitekey ?? $task->ref->civicrm_sitekey ?? '';
+  $task->context_options['civicrm_ansible_credkey'] = $task->ref->civicrm_ansible_credkey ?? '';
+  $task->context_options['civicrm_ansible_signkey'] = $task->ref->civicrm_ansible_signkey ?? '';
+  // Legacy
+  $task->context_options['civicrm_sitekey'] = $task->context_options['civicrm_ansible_sitekey'];
 }
 
 /**
@@ -31,6 +30,11 @@ function hosting_civicrm_drush_context_import($context, &$node) {
     if (isset($context->civicrm_sitekey) && !empty($context->civicrm_sitekey)) {
       $node->civicrm_sitekey = $context->civicrm_sitekey;
     }
+
+    // Not sure what this does, transition towards Aegir-on-Backdrop
+    $node->civicrm_ansible_sitekey = $context->civicrm_ansible_sitekey ?? NULL;
+    $node->civicrm_ansible_credkey = $context->civicrm_ansible_credkey ?? NULL;
+    $node->civicrm_ansible_sitekey = $context->civicrm_ansible_sitekey ?? NULL;
   }
 }
 
